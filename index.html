@@ -10,14 +10,6 @@
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
   import { getDatabase, ref, get, set, onValue } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
 
-  /* ═══════════════════════════════════════════════════════════════
-     🔧 CONFIGURA AQUÍ TUS CREDENCIALES DE FIREBASE
-     1. Ve a https://console.firebase.google.com
-     2. Crea un proyecto → Realtime Database → Crear base de datos
-     3. En Reglas, pon: { "rules": { ".read": true, ".write": true } }
-     4. En Configuración del proyecto → Tus apps → Agregar app web
-     5. Copia y pega los valores de firebaseConfig aquí abajo
-  ═══════════════════════════════════════════════════════════════ */
   const firebaseConfig = {
     apiKey:            "AIzaSyBkolxgcHJE1vKjuSW3ql600dH9fuTQAZg",
     authDomain:        "quiniela-extraordinaria-2026.firebaseapp.com",
@@ -28,15 +20,17 @@
     appId:             "1:10050222246504:web:98f56c8635aa367b97addd"
   };
 
-  const app = initializeApp(firebaseConfig);
-  const db  = getDatabase(app);
+  const fbApp = initializeApp(firebaseConfig);
+  const db    = getDatabase(fbApp);
 
-  /* Exponemos solo lo necesario al script principal */
-  window._fbDb  = db;
-  window._fbRef = ref;
-  window._fbGet = get;
-  window._fbSet = set;
+  window._fbDb      = db;
+  window._fbRef     = ref;
+  window._fbGet     = get;
+  window._fbSet     = set;
   window._fbOnValue = onValue;
+
+  /* Signal to the main script that Firebase is ready */
+  window.dispatchEvent(new CustomEvent("firebase-ready"));
 </script>
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Oswald:wght@500;600;700&family=Manrope:wght@400;500;600;700;800&family=Space+Mono:wght@400;700&display=swap');
@@ -732,19 +726,23 @@ function showToast(msg) {
    – Shared data (quiniela state) → Firebase Realtime Database
    – Session (who is logged in) → localStorage (per-device only)
 --------------------------------------------------------------- */
-const DB_PATH = "quiniela-2026";   // root node in your Firebase DB
+const DB_PATH = "quiniela-2026";
 
-/* Wait for the Firebase module to initialise (it loads async) */
-function waitForFirebase(timeout = 8000) {
-  return new Promise((resolve, reject) => {
-    const start = Date.now();
-    const check = () => {
-      if (window._fbDb) return resolve();
-      if (Date.now() - start > timeout) return reject(new Error("Firebase no cargó"));
-      setTimeout(check, 80);
-    };
-    check();
-  });
+/* Firebase signals readiness via a CustomEvent; we capture it here
+   in case it fires before or after init() runs. */
+let _fbResolve;
+const _fbReady = new Promise(res => { _fbResolve = res; });
+if (window._fbDb) {
+  _fbResolve(); // already ready (shouldn't happen but safe)
+} else {
+  window.addEventListener("firebase-ready", () => _fbResolve(), { once: true });
+}
+
+async function waitForFirebase(timeout = 10000) {
+  return Promise.race([
+    _fbReady,
+    new Promise((_, rej) => setTimeout(() => rej(new Error("Firebase timeout")), timeout))
+  ]);
 }
 
 async function fbRead() {
