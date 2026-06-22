@@ -652,8 +652,11 @@ function ensureScoringShape(d) {
   if (!d.scoring || typeof d.scoring.outcome !== "number" || typeof d.scoring.perGoal !== "number") {
     d.scoring = { outcome: 3, perGoal: 1 };
   }
-  if (!d.bonusPredictions) d.bonusPredictions = {};
-  if (!d.bonusResults) d.bonusResults = {};
+  if (!d.users)             d.users             = {};
+  if (!d.predictions)       d.predictions       = {};
+  if (!d.results)           d.results           = {};
+  if (!d.bonusPredictions)  d.bonusPredictions  = {};
+  if (!d.bonusResults)      d.bonusResults      = {};
   return d;
 }
 function outcomeHit(pred, result) {
@@ -1321,7 +1324,7 @@ function renderAdmin() {
 }
 
 function adminUsersHtml() {
-  const entries = Object.entries(DATA.users).sort((a, b) => a[1].name.localeCompare(b[1].name));
+  const entries = Object.entries(DATA.users || {}).sort((a, b) => a[1].name.localeCompare(b[1].name));
   const list = entries.length === 0
     ? `<div class="qn-empty">Todavía no hay participantes. Agrega el primero arriba.</div>`
     : entries.map(([username, u]) => {
@@ -1417,7 +1420,7 @@ function adminResultsHtml() {
 }
 
 function adminPredictionsHtml() {
-  const userEntries = Object.entries(DATA.users).sort((a, b) => a[1].name.localeCompare(b[1].name));
+  const userEntries = Object.entries(DATA.users || {}).sort((a, b) => a[1].name.localeCompare(b[1].name));
 
   const matchSection = (m, isBonus) => {
     const result = isBonus ? DATA.bonusResults[m.id] : DATA.results[m.id];
