@@ -1563,6 +1563,14 @@ function render() {
     return;
   }
   if (!SESSION) { renderLogin(); return; }
+  /* Safety: if the stored session references a user that no longer exists,
+     log them out rather than crashing */
+  if (SESSION.role === "player" && (!DATA.users || !DATA.users[SESSION.username])) {
+    SESSION = null;
+    try { localStorage.removeItem(SESSION_KEY); } catch(e) {}
+    renderLogin();
+    return;
+  }
   if (SESSION.role === "admin") { renderAdmin(); return; }
   renderPlayer();
 }
@@ -1753,12 +1761,12 @@ app.addEventListener("submit", async (e) => {
     </div></div>`;
     return;
   }
-  await loadData();
-  await restoreSession();
+  await loadData();       // data first
+  await restoreSession(); // then session — so DATA is never null when render runs
   render();
-  startRealtimeSync();          // live updates from Firebase
+  startRealtimeSync();
   TICK_TIMER = setInterval(tick, 30000);
-  POLL_TIMER = setInterval(poll, 25000); // kept for compatibility, now a no-op
+  POLL_TIMER = setInterval(poll, 25000);
 })();
 </script>
 </body>
