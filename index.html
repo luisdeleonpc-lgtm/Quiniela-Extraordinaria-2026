@@ -1,0 +1,1767 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Quiniela Mundial 2026</title>
+
+<!-- Firebase SDK (Realtime Database) -->
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+  import { getDatabase, ref, get, set, onValue } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
+
+  /* ═══════════════════════════════════════════════════════════════
+     🔧 CONFIGURA AQUÍ TUS CREDENCIALES DE FIREBASE
+     1. Ve a https://console.firebase.google.com
+     2. Crea un proyecto → Realtime Database → Crear base de datos
+     3. En Reglas, pon: { "rules": { ".read": true, ".write": true } }
+     4. En Configuración del proyecto → Tus apps → Agregar app web
+     5. Copia y pega los valores de firebaseConfig aquí abajo
+  ═══════════════════════════════════════════════════════════════ */
+  const firebaseConfig = {
+    apiKey:            "TU_API_KEY",
+    authDomain:        "TU_PROJECT.firebaseapp.com",
+    databaseURL:       "https://TU_PROJECT-default-rtdb.firebaseio.com",
+    projectId:         "TU_PROJECT",
+    storageBucket:     "TU_PROJECT.appspot.com",
+    messagingSenderId: "TU_SENDER_ID",
+    appId:             "TU_APP_ID"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const db  = getDatabase(app);
+
+  /* Exponemos solo lo necesario al script principal */
+  window._fbDb  = db;
+  window._fbRef = ref;
+  window._fbGet = get;
+  window._fbSet = set;
+  window._fbOnValue = onValue;
+</script>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Oswald:wght@500;600;700&family=Manrope:wght@400;500;600;700;800&family=Space+Mono:wght@400;700&display=swap');
+
+  html, body { margin: 0; padding: 0; height: 100%; }
+
+  .qn {
+    --bg: #0A2620;
+    --bg-deep: #071B16;
+    --surface: #11352B;
+    --surface-2: #16412F;
+    --inset: #082019;
+    --gold: #F2B705;
+    --gold-soft: #F7D154;
+    --cream: #F5F1E6;
+    --muted: #9FBFAE;
+    --red: #E8553D;
+    --line: rgba(245,241,230,0.12);
+    --petrol: #0D3B4F;
+    --petrol-deep: #082836;
+    --petrol-light: #1A5870;
+    --yellow-bright: #FFD400;
+    --green-dark-glass: rgba(8, 32, 25, 0.82);
+    --group-a: #E8553D;
+    --group-f: #3B82F6;
+    --group-g: #34D399;
+    --group-h: #FB923C;
+    font-family: 'Manrope', sans-serif;
+    background:
+      radial-gradient(circle at 15% 0%, rgba(242,183,5,0.06), transparent 45%),
+      repeating-linear-gradient(0deg, rgba(245,241,230,0.025) 0px, rgba(245,241,230,0.025) 1px, transparent 1px, transparent 64px),
+      repeating-linear-gradient(90deg, rgba(245,241,230,0.025) 0px, rgba(245,241,230,0.025) 1px, transparent 1px, transparent 64px),
+      var(--bg);
+    color: var(--cream);
+    min-height: 100vh;
+    width: 100%;
+    box-sizing: border-box;
+  }
+  .qn * { box-sizing: border-box; }
+  .qn h1, .qn h2, .qn h3, .qn .disp {
+    font-family: 'Oswald', sans-serif;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    margin: 0;
+  }
+  .qn .mono { font-family: 'Space Mono', monospace; }
+
+  /* ---------- Login ---------- */
+  .qn-login-wrap {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 110px 16px 40px;
+    position: relative;
+    overflow: hidden;
+    background:
+      radial-gradient(ellipse 820px 560px at 50% 104%, rgba(74,222,128,0.50), rgba(74,222,128,0.10) 42%, transparent 74%),
+      radial-gradient(ellipse 980px 860px at -10% 26%, rgba(255,107,53,0.50), rgba(232,85,61,0.16) 48%, transparent 74%),
+      radial-gradient(ellipse 980px 860px at 110% 26%, rgba(34,211,238,0.44), rgba(74,222,128,0.14) 48%, transparent 74%),
+      radial-gradient(circle 340px at 50% 4%, rgba(242,183,5,0.48), transparent 74%),
+      linear-gradient(180deg, #03060A 0%, #050E10 45%, #03130D 100%);
+  }
+  .qn-beam { position: absolute; pointer-events: none; mix-blend-mode: screen; z-index: 0; }
+  .qn-beam-1 { left: -70px; top: -8%; width: 190px; height: 125%; background: linear-gradient(200deg, transparent 0%, rgba(255,107,53,0.40) 45%, rgba(242,183,5,0.28) 56%, transparent 100%); transform: rotate(9deg); }
+  .qn-beam-2 { left: 60px; top: -12%; width: 100px; height: 120%; background: linear-gradient(200deg, transparent 0%, rgba(242,183,5,0.26) 50%, transparent 100%); transform: rotate(11deg); }
+  .qn-beam-3 { right: -70px; top: -8%; width: 190px; height: 125%; background: linear-gradient(160deg, transparent 0%, rgba(34,211,238,0.36) 45%, rgba(74,222,128,0.26) 56%, transparent 100%); transform: rotate(-9deg); }
+  .qn-beam-4 { right: 60px; top: -12%; width: 100px; height: 120%; background: linear-gradient(160deg, transparent 0%, rgba(74,222,128,0.26) 50%, transparent 100%); transform: rotate(-11deg); }
+  .qn-confetti-piece { position: absolute; pointer-events: none; z-index: 1; border-radius: 1px; }
+  .qn-pitch-lines { position: absolute; bottom: 0; left: 0; width: 100%; height: 160px; z-index: 0; pointer-events: none; }
+  .qn-login-stage { position: relative; z-index: 2; display: flex; flex-direction: column; align-items: center; width: 100%; max-width: 420px; }
+  .qn-emblem-wrap { position: relative; width: 170px; height: 170px; margin-bottom: -44px; display: flex; align-items: center; justify-content: center; z-index: 1; }
+  .qn-emblem-glow { position: absolute; inset: -36px; border-radius: 50%; background: radial-gradient(circle, rgba(242,183,5,0.55) 0%, rgba(242,183,5,0.16) 42%, transparent 72%); filter: blur(4px); }
+  .qn-emblem-ring { position: absolute; border-radius: 50%; border: 1px solid rgba(242,183,5,0.38); }
+  .qn-emblem-ring.r1 { inset: 6px; }
+  .qn-emblem-ring.r2 { inset: -20px; border-color: rgba(242,183,5,0.2); }
+  .qn-emblem-beam { position: absolute; width: 2px; height: 56px; top: -56px; left: 50%; transform: translateX(-50%); background: linear-gradient(180deg, rgba(242,183,5,0.9), transparent); }
+  .qn-emblem-trophy { width: 90px; height: 90px; position: relative; z-index: 2; filter: drop-shadow(0 0 16px rgba(242,183,5,0.75)); }
+  .qn-login-card { width: 100%; background: rgba(10,30,24,0.92); border: 1px solid rgba(242,183,5,0.3); border-radius: 16px; padding: 32px 28px; box-shadow: 0 0 0 1px rgba(242,183,5,0.06), 0 30px 70px rgba(0,0,0,0.55), 0 0 50px rgba(242,183,5,0.08); position: relative; z-index: 2; backdrop-filter: blur(2px); }
+  .qn-hero { text-align: center; margin-bottom: 24px; }
+  .qn-hero .qn-trophy-icon { width: 46px; height: 46px; margin: 0 auto 8px; display: block; }
+  .qn-hero h1 { font-size: 28px; color: var(--cream); line-height: 1.1; }
+  .qn-hero h1 span { color: var(--gold); }
+  .qn-hero p { color: var(--muted); font-size: 13px; margin-top: 6px; letter-spacing: 0.08em; text-transform: uppercase; }
+  .qn-tabs { display: flex; background: var(--inset); border-radius: 10px; padding: 4px; margin-bottom: 22px; border: 1px solid var(--line); }
+  .qn-tab { flex: 1; text-align: center; padding: 9px 8px; border-radius: 7px; font-family: 'Oswald', sans-serif; font-size: 13px; letter-spacing: 0.05em; text-transform: uppercase; cursor: pointer; color: var(--muted); background: transparent; border: none; transition: all .15s ease; }
+  .qn-tab.active { background: var(--gold); color: var(--bg-deep); font-weight: 600; }
+  .qn-field { margin-bottom: 14px; }
+  .qn-field label { display: block; font-size: 12px; color: var(--muted); margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.06em; }
+  .qn-input { width: 100%; background: var(--inset); border: 1px solid var(--line); border-radius: 8px; padding: 11px 12px; color: var(--cream); font-size: 15px; font-family: 'Manrope', sans-serif; outline: none; }
+  .qn-input:focus { border-color: var(--gold); }
+  .qn-btn { width: 100%; background: var(--gold); color: var(--bg-deep); border: none; border-radius: 8px; padding: 12px; font-family: 'Oswald', sans-serif; font-size: 14px; letter-spacing: 0.05em; text-transform: uppercase; font-weight: 600; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; transition: filter .15s ease; }
+  .qn-btn:hover { filter: brightness(1.08); }
+  .qn-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+  .qn-btn-ghost { background: transparent; color: var(--cream); border: 1px solid var(--line); width: auto; padding: 10px 18px; }
+  .qn-btn-ghost:hover { border-color: var(--gold); filter: none; background: rgba(242,183,5,0.06); }
+  .qn-btn-add { background: var(--yellow-bright); color: #1A1400; box-shadow: 0 0 0 1px rgba(255,212,0,0.4), 0 4px 14px rgba(255,212,0,0.25); }
+  .qn-btn-add:hover { filter: brightness(1.05); }
+  .qn-error { background: rgba(232,85,61,0.12); border: 1px solid rgba(232,85,61,0.4); color: #FFB3A4; font-size: 13px; padding: 9px 12px; border-radius: 8px; margin-bottom: 14px; }
+
+  /* ---------- App shell ---------- */
+  .qn-shell { min-height: 100vh; padding-bottom: 60px; }
+  .qn-shell-admin {
+    background:
+      radial-gradient(ellipse 760px 420px at 50% 100%, rgba(52,211,153,0.07), transparent 65%),
+      radial-gradient(ellipse 620px 520px at 0% 0%, rgba(13,59,79,0.55), transparent 62%),
+      radial-gradient(ellipse 620px 520px at 100% 0%, rgba(13,59,79,0.55), transparent 62%),
+      radial-gradient(circle 260px at 50% 0%, rgba(242,183,5,0.10), transparent 70%);
+  }
+  .qn-topbar { display: flex; align-items: center; justify-content: space-between; padding: 16px 20px; border-bottom: 1px solid var(--line); background: rgba(7,27,22,0.7); backdrop-filter: blur(6px); position: sticky; top: 0; z-index: 10; gap: 12px; flex-wrap: wrap; }
+  .qn-topbar-admin { background: linear-gradient(135deg, rgba(13,59,79,0.92), rgba(8,40,54,0.92)); border-bottom: 1px solid rgba(26,88,112,0.6); }
+  .qn-brand { display: flex; align-items: center; gap: 10px; }
+  .qn-brand h2 { font-size: 17px; color: var(--cream); }
+  .qn-brand h2 span { color: var(--gold); }
+  .qn-who { display:flex; align-items:center; gap: 10px; }
+  .qn-who .name { font-size: 13px; color: var(--muted); }
+  .qn-iconbtn { background: var(--surface); border: 1px solid var(--line); color: var(--cream); border-radius: 8px; padding: 8px 12px; cursor: pointer; display: flex; align-items: center; gap: 6px; font-size: 13px; font-family: 'Manrope', sans-serif; }
+  .qn-iconbtn:hover { border-color: var(--red); color: var(--red); }
+
+  .qn-nav { display: flex; gap: 4px; padding: 14px 20px 0; overflow-x: auto; }
+  .qn-navbtn { background: transparent; border: none; color: var(--muted); padding: 10px 14px; font-family: 'Oswald', sans-serif; font-size: 13px; letter-spacing: 0.04em; text-transform: uppercase; cursor: pointer; border-bottom: 2px solid transparent; white-space: nowrap; display: flex; align-items: center; gap: 6px; }
+  .qn-navbtn.active { color: var(--gold); border-bottom-color: var(--gold); }
+  .qn-nav-admin .qn-navbtn { border-radius: 8px; border-bottom: 2px solid transparent; margin-bottom: 4px; }
+  .qn-nav-admin .qn-navbtn.active { color: var(--bg-deep); background: var(--gold); border-bottom-color: transparent; font-weight: 600; }
+
+  .qn-content { padding: 20px; max-width: 980px; margin: 0 auto; }
+  .qn-day-header { display: flex; align-items: center; gap: 10px; margin: 28px 0 14px; color: var(--gold-soft); font-size: 13px; letter-spacing: 0.08em; text-transform: uppercase; }
+  .qn-day-header:first-child { margin-top: 6px; }
+  .qn-day-header::after { content: ""; flex: 1; height: 1px; background: var(--line); }
+
+  .qn-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 14px; }
+  .qn-card { background: var(--surface); border: 1px solid var(--line); border-left: 4px solid var(--gold); border-radius: 12px; padding: 16px; }
+  .qn-card-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+  .qn-badge { font-size: 10px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--gold-soft); border: 1px solid rgba(242,183,5,0.35); background: rgba(242,183,5,0.08); padding: 3px 8px; border-radius: 5px; font-family: 'Oswald', sans-serif; }
+  .qn-status { font-size: 11px; display: flex; align-items: center; gap: 4px; color: var(--muted); }
+  .qn-status.locked { color: var(--red); }
+
+  .qn-team-row { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
+  .qn-flag-swatch { position: relative; width: 30px; height: 21px; border-radius: 3px; overflow: hidden; box-shadow: 0 0 0 1px rgba(255,255,255,0.18), 0 1px 3px rgba(0,0,0,0.4); flex-shrink: 0; }
+  .qn-avatar { position: relative; border-radius: 50%; overflow: hidden; flex-shrink: 0; border: 2px solid var(--gold); background: var(--inset); display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 8px rgba(0,0,0,0.35); }
+  .qn-avatar-empty { color: var(--gold); }
+
+  /* ---- Rules modal ---- */
+  .qn-modal-overlay {
+    position: fixed; inset: 0; background: rgba(5,20,14,0.85); backdrop-filter: blur(4px);
+    display: flex; align-items: center; justify-content: center; z-index: 9999; padding: 16px;
+  }
+  .qn-modal {
+    background: linear-gradient(160deg, #0D2D20, #071B16 70%);
+    border: 1.5px solid rgba(242,183,5,0.45); border-radius: 18px;
+    padding: 28px 28px 22px; max-width: 520px; width: 100%;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.6), 0 0 0 1px rgba(242,183,5,0.1);
+    max-height: 90vh; overflow-y: auto;
+  }
+  .qn-modal-logo { text-align: center; margin-bottom: 6px; font-size: 28px; }
+  .qn-modal-title { font-family: 'Oswald', sans-serif; font-size: 20px; font-weight: 700; color: var(--gold); text-align: center; margin-bottom: 2px; letter-spacing: 0.04em; }
+  .qn-modal-sub { font-family: 'Oswald', sans-serif; font-size: 14px; color: var(--gold-soft); text-align: center; margin-bottom: 18px; letter-spacing: 0.02em; }
+  .qn-modal-divider { border: none; border-top: 1px solid var(--line); margin: 14px 0; }
+  .qn-modal-rule { display: flex; gap: 10px; margin-bottom: 10px; font-size: 13.5px; color: var(--cream); line-height: 1.45; }
+  .qn-modal-rule .bullet { color: var(--gold); font-size: 15px; flex-shrink: 0; margin-top: 1px; }
+  .qn-modal-sub-rule { display: flex; gap: 8px; margin: 4px 0 4px 24px; font-size: 12.5px; color: var(--muted); }
+  .qn-modal-sub-rule .dot { flex-shrink: 0; }
+  .qn-modal-section { font-family: 'Oswald', sans-serif; font-size: 14px; font-weight: 600; color: var(--gold); text-transform: uppercase; letter-spacing: 0.06em; margin: 16px 0 10px; }
+  .qn-modal-footer { font-size: 11px; color: var(--muted); text-align: center; margin-top: 14px; }
+  .qn-modal-btn { display: block; width: 100%; margin-top: 20px; padding: 13px; background: var(--gold); color: var(--bg-deep); font-family: 'Oswald', sans-serif; font-size: 15px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; border: none; border-radius: 10px; cursor: pointer; transition: opacity .15s; }
+  .qn-modal-btn:hover { opacity: 0.88; }
+  .qn-team-name { flex: 1; font-size: 14.5px; font-weight: 600; }
+  .qn-score-input { width: 48px; height: 44px; background: var(--inset); border: 1px solid var(--line); border-radius: 7px; color: var(--gold-soft); font-family: 'Space Mono', monospace; font-size: 20px; text-align: center; box-shadow: inset 0 2px 6px rgba(0,0,0,0.5); }
+  .qn-score-input:focus { outline: none; border-color: var(--gold); }
+  .qn-score-input:disabled { color: var(--muted); opacity: 0.6; }
+  .qn-card-foot { display: flex; align-items: center; justify-content: space-between; margin-top: 12px; gap: 8px; flex-wrap: wrap; }
+  .qn-save { background: var(--gold); color: var(--bg-deep); border: none; border-radius: 7px; padding: 8px 14px; font-family: 'Oswald', sans-serif; font-size: 12.5px; letter-spacing: 0.04em; text-transform: uppercase; font-weight: 600; cursor: pointer; }
+  .qn-save:disabled { opacity: 0.4; cursor: not-allowed; }
+  .qn-saved-tag { font-size: 11px; color: var(--muted); display:flex; align-items:center; gap:4px; }
+  .qn-points-tag { font-size: 11px; font-family: 'Space Mono', monospace; color: var(--gold); background: rgba(242,183,5,0.1); padding: 3px 8px; border-radius: 6px; }
+
+  /* ---------- Bonus matches ---------- */
+  .qn-notice-banner {
+    display: flex; align-items: center; gap: 10px; background: linear-gradient(90deg, rgba(242,183,5,0.16), rgba(242,183,5,0.05));
+    border: 1px solid rgba(242,183,5,0.4); border-radius: 10px; padding: 12px 14px; margin-bottom: 16px;
+  }
+  .qn-notice-banner .icon { font-size: 20px; flex-shrink: 0; }
+  .qn-notice-banner .text { flex: 1; font-size: 13px; color: var(--cream); line-height: 1.4; }
+  .qn-notice-banner .text b { color: var(--gold-soft); }
+  .qn-notice-close { background: none; border: none; color: var(--muted); font-size: 16px; cursor: pointer; padding: 2px 6px; line-height: 1; flex-shrink: 0; }
+  .qn-notice-close:hover { color: var(--cream); }
+
+  .qn-bonus-card {
+    position: relative; background: linear-gradient(160deg, rgba(242,183,5,0.14), var(--green-dark-glass) 55%);
+    border: 1.5px solid rgba(242,183,5,0.55); border-radius: 14px; padding: 18px; margin-bottom: 22px;
+    box-shadow: 0 6px 22px rgba(242,183,5,0.12);
+  }
+  .qn-bonus-tag {
+    display: inline-flex; align-items: center; gap: 6px; font-family: 'Oswald', sans-serif; font-size: 11px;
+    letter-spacing: 0.08em; text-transform: uppercase; font-weight: 600; color: var(--bg-deep); background: var(--gold);
+    padding: 4px 10px; border-radius: 999px; margin-bottom: 12px;
+  }
+  .qn-bonus-head { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px; margin-bottom: 14px; }
+  .qn-bonus-title { font-family: 'Oswald', sans-serif; font-size: 17px; font-weight: 600; color: var(--cream); }
+  .qn-bonus-sub { font-size: 12px; color: var(--gold-soft); margin-top: 2px; }
+  .qn-bonus-foot { display: flex; align-items: center; justify-content: space-between; margin-top: 14px; gap: 8px; flex-wrap: wrap; }
+
+  /* ---------- Admin ---------- */
+  .qn-section-title { font-size: 19px; margin-bottom: 14px; color: var(--cream); display:flex; align-items:center; gap:8px; }
+  .qn-panel { background: var(--green-dark-glass); backdrop-filter: blur(6px); border: 1px solid rgba(74,222,128,0.18); border-radius: 12px; padding: 18px; margin-bottom: 18px; }
+  .qn-add-row { display: flex; gap: 8px; margin-bottom: 4px; }
+  .qn-add-row input { flex: 1; }
+  .qn-user-list { margin-top: 16px; display: flex; flex-direction: column; gap: 10px; }
+  .qn-user-card { background: var(--green-dark-glass); backdrop-filter: blur(4px); border: 1px solid rgba(74,222,128,0.16); border-radius: 9px; padding: 12px 14px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px; }
+  .qn-user-name { font-weight: 700; font-size: 14.5px; }
+  .qn-cred-pill { font-family: 'Space Mono', monospace; font-size: 12.5px; color: var(--gold-soft); background: rgba(242,183,5,0.08); border: 1px solid rgba(242,183,5,0.25); padding: 5px 10px; border-radius: 6px; display: inline-flex; align-items: center; gap: 8px; }
+  .qn-user-actions { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
+  .qn-tiny-btn { background: transparent; border: 1px solid var(--line); color: var(--muted); border-radius: 6px; padding: 6px 8px; cursor: pointer; display: inline-flex; align-items: center; gap: 4px; font-size: 12px; text-decoration: none; font-family: 'Manrope', sans-serif; }
+  .qn-tiny-btn:hover { border-color: var(--gold); color: var(--gold-soft); }
+  .qn-tiny-btn.danger:hover { border-color: var(--red); color: var(--red); }
+  .qn-empty { color: var(--muted); font-size: 13.5px; padding: 14px 0; text-align: center; }
+
+  .qn-result-row { display: flex; align-items: center; gap: 12px; padding: 12px 0; border-bottom: 1px solid var(--line); flex-wrap: wrap; }
+  .qn-result-row:last-child { border-bottom: none; }
+  .qn-result-teams { flex: 1; min-width: 200px; font-size: 14px; display: flex; align-items: center; gap: 6px; }
+
+  .qn-pred-match-head { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; margin-bottom: 12px; padding-bottom: 10px; border-bottom: 1px solid var(--line); }
+  .qn-pred-list { display: flex; flex-direction: column; gap: 2px; }
+  .qn-pred-row { display: flex; align-items: center; gap: 10px; padding: 7px 4px; border-bottom: 1px solid rgba(245,241,230,0.06); }
+  .qn-pred-row:last-child { border-bottom: none; }
+  .qn-pred-name { flex: 1; font-size: 13.5px; font-weight: 600; }
+  .qn-pred-score { font-size: 14px; color: var(--gold-soft); min-width: 56px; text-align: right; }
+
+  .qn-settings-row { display: flex; align-items: center; gap: 12px; margin-bottom: 14px; flex-wrap: wrap; }
+  .qn-settings-row label { font-size: 13px; color: var(--muted); min-width: 170px; }
+  .qn-settings-row .qn-input { max-width: 140px; }
+  .qn-subhead { font-size: 14px; color: var(--muted); margin-bottom: 12px; text-transform: uppercase; letter-spacing: 0.05em; }
+
+  /* ---------- Leaderboard ---------- */
+  .qn-lb-row { display: flex; align-items: center; gap: 14px; padding: 12px 14px; border-radius: 9px; margin-bottom: 6px; background: var(--inset); border: 1px solid var(--line); }
+  .qn-lb-row.top1 { border-color: rgba(242,183,5,0.5); background: rgba(242,183,5,0.08); }
+  .qn-lb-rank { font-family: 'Oswald', sans-serif; font-size: 16px; width: 26px; color: var(--muted); text-align: center; }
+  .qn-lb-row.top1 .qn-lb-rank { color: var(--gold); }
+  .qn-lb-name { flex: 1; font-weight: 700; font-size: 14.5px; }
+  .qn-lb-meta { font-size: 11px; color: var(--muted); display: flex; gap: 10px; flex-wrap: wrap; }
+  .qn-lb-total { font-family: 'Space Mono', monospace; font-size: 18px; color: var(--gold-soft); min-width: 50px; text-align: right; }
+
+  .qn-toast { position: fixed; bottom: 22px; left: 50%; transform: translateX(-50%); background: var(--gold); color: var(--bg-deep); padding: 11px 20px; border-radius: 9px; font-size: 13.5px; font-weight: 600; box-shadow: 0 10px 30px rgba(0,0,0,0.4); z-index: 100; display: flex; align-items: center; gap: 8px; opacity: 0; pointer-events: none; transition: opacity .2s ease; }
+  .qn-toast.show { opacity: 1; }
+
+  @media (max-width: 520px) {
+    .qn-content { padding: 14px; }
+    .qn-topbar { padding: 12px 14px; }
+  }
+</style>
+</head>
+<body>
+  <div id="app" class="qn"></div>
+  <div id="toast" class="qn-toast"></div>
+
+<script>
+/* ---------------------------------------------------------------
+   DATA
+--------------------------------------------------------------- */
+const STORAGE_KEY = "quiniela-2026-data";
+const SESSION_KEY = "quiniela-2026-session";
+
+const DEFAULT_DATA = {
+  adminPassword: "Mundial2026",
+  scoring: { outcome: 3, perGoal: 1 },
+  users: {},
+  predictions: {},
+  results: {},
+  bonusPredictions: {},
+  bonusResults: {}
+};
+
+const MATCHES = [
+  { id: "m3", day: "Viernes 26 de junio", group: "H", kickoff: "2026-06-26T18:00:00-06:00", timeLabel: "6:00 p. m.",
+    home: { name: "Cabo Verde", code: "CV" }, away: { name: "Arabia Saudita", code: "SA" } },
+  { id: "m4", day: "Viernes 26 de junio", group: "H", kickoff: "2026-06-26T18:00:00-06:00", timeLabel: "6:00 p. m.",
+    home: { name: "Uruguay", code: "UY" }, away: { name: "España", code: "ES" } },
+  { id: "m5", day: "Viernes 26 de junio", group: "G", kickoff: "2026-06-26T21:00:00-06:00", timeLabel: "9:00 p. m.",
+    home: { name: "Nueva Zelanda", code: "NZ" }, away: { name: "Bélgica", code: "BE" } },
+  { id: "m6", day: "Viernes 26 de junio", group: "G", kickoff: "2026-06-26T21:00:00-06:00", timeLabel: "9:00 p. m.",
+    home: { name: "Egipto", code: "EG" }, away: { name: "Irán", code: "IR" } }
+];
+const DAYS = [...new Set(MATCHES.map(m => m.day))];
+
+/* Bonus matches: separate mini-quiniela for extra points. Each one only
+   scores if the participant nails the EXACT scoreline; locks 1h before
+   kickoff (instead of the usual 30 min). The app surfaces them dynamically:
+   the calendar day before a bonus match it shows a heads-up notice, and on
+   the match day itself it shows a featured bonus card on the home screen. */
+const BONUS_MATCHES = [
+  { id: "b1", group: "L", day: "Martes 23 de junio", kickoff: "2026-06-23T17:00:00-06:00", timeLabel: "5:00 p. m.",
+    home: { name: "Panamá", code: "PA" }, away: { name: "Croacia", code: "HR" }, points: 3 },
+  { id: "b2", group: "B", day: "Miércoles 24 de junio", kickoff: "2026-06-24T13:00:00-06:00", timeLabel: "1:00 p. m.",
+    home: { name: "Suiza", code: "CH" }, away: { name: "Canadá", code: "CA" }, points: 3 },
+  { id: "b3", group: "I", day: "Viernes 26 de junio", kickoff: "2026-06-26T13:00:00-06:00", timeLabel: "1:00 p. m.",
+    home: { name: "Noruega", code: "NO" }, away: { name: "Francia", code: "FR" }, points: 3 },
+  { id: "b4", group: "K", day: "Sábado 27 de junio", kickoff: "2026-06-27T17:30:00-06:00", timeLabel: "5:30 p. m.",
+    home: { name: "Colombia", code: "CO" }, away: { name: "Portugal", code: "PT" }, points: 3 }
+];
+const BONUS_LOCK_MINUTES_BEFORE = 60;
+
+const CONFETTI = [
+  { top: "5%", left: "3%", size: 10, color: "#F2B705", rotate: 15 },
+  { top: "15%", left: "10%", size: 7, color: "#FF6B35", rotate: -20 },
+  { top: "28%", left: "5%", size: 8, color: "#F2B705", rotate: 35 },
+  { top: "45%", left: "12%", size: 6, color: "#FF6B35", rotate: 10 },
+  { top: "62%", left: "6%", size: 9, color: "#F2B705", rotate: -25 },
+  { top: "78%", left: "15%", size: 7, color: "#FF6B35", rotate: 20 },
+  { top: "88%", left: "8%", size: 10, color: "#F2B705", rotate: -10 },
+  { top: "6%", left: "94%", size: 9, color: "#22D3EE", rotate: -15 },
+  { top: "18%", left: "88%", size: 7, color: "#4ADE80", rotate: 25 },
+  { top: "32%", left: "95%", size: 8, color: "#22D3EE", rotate: 10 },
+  { top: "48%", left: "90%", size: 6, color: "#4ADE80", rotate: -30 },
+  { top: "65%", left: "96%", size: 9, color: "#22D3EE", rotate: 15 },
+  { top: "80%", left: "89%", size: 7, color: "#4ADE80", rotate: -20 },
+  { top: "90%", left: "95%", size: 8, color: "#F2B705", rotate: 30 },
+  { top: "3%", left: "46%", size: 6, color: "#F2B705", rotate: 45 },
+  { top: "4%", left: "57%", size: 5, color: "#F2B705", rotate: -30 }
+];
+const LOCK_MINUTES_BEFORE = 30;
+const PASS_CHARS = "ABCDEFGHJKMNPQRSTUVWXYZ23456789";
+const matchById = id => MATCHES.find(m => m.id === id);
+const bonusById = id => BONUS_MATCHES.find(m => m.id === id);
+const GROUP_COLORS = { A: "#E8553D", F: "#3B82F6", G: "#34D399", H: "#FB923C", B: "#A78BFA", I: "#2DD4BF", K: "#FB7185", L: "#FBBF24" };
+
+/* Generic flag system: each flag = base stripes + small composable shapes
+   (rect/circle/diamond/triangle/taegeuk). This lets every flag render
+   identically on any device, with no emoji or external assets. */
+const FLAGS = {
+  DE: { stripes: ["#000000", "#DD0000", "#FFCE00"] },
+  SA: { stripes: ["#006C35"] },
+  DZ: { stripes: ["#006233", "#FFFFFF"], stripesDir: "v", shapes: [
+    { type: "circle", top: 50, left: 54, w: 30, h: 46, color: "#D21034" },
+    { type: "circle", top: 50, left: 62, w: 22, h: 34, color: "#FFFFFF" },
+    { type: "circle", top: 50, left: 68, w: 7, h: 10, color: "#D21034" } ] },
+  AR: { stripes: ["#74ACDF", "#FFFFFF", "#74ACDF"], shapes: [
+    { type: "circle", top: 50, left: 50, w: 18, h: 26, color: "#F6B40E" } ] },
+  AU: { stripes: ["#00247D"], shapes: [
+    { type: "circle", top: 28, left: 32, w: 6, h: 9, color: "#fff" },
+    { type: "circle", top: 46, left: 55, w: 8, h: 11, color: "#fff" },
+    { type: "circle", top: 66, left: 34, w: 6, h: 9, color: "#fff" },
+    { type: "circle", top: 72, left: 64, w: 5, h: 7, color: "#fff" },
+    { type: "circle", top: 56, left: 70, w: 6, h: 9, color: "#fff" } ] },
+  AT: { stripes: ["#ED2939", "#FFFFFF", "#ED2939"] },
+  BA: { stripes: ["#002395"], shapes: [
+    { type: "triangle", side: "left", w: 55, color: "#FECB00" },
+    { type: "circle", top: 20, left: 62, w: 5, h: 7, color: "#fff" },
+    { type: "circle", top: 38, left: 74, w: 5, h: 7, color: "#fff" },
+    { type: "circle", top: 56, left: 86, w: 5, h: 7, color: "#fff" } ] },
+  BR: { stripes: ["#009639"], shapes: [
+    { type: "diamond", top: 50, left: 50, w: 64, h: 64, color: "#FEDF00" },
+    { type: "circle", top: 50, left: 50, w: 32, h: 32, color: "#002776" } ] },
+  BE: { stripesDir: "v", stripes: ["#000000", "#FAE042", "#ED2939"] },
+  CV: { stripes: ["#003893"], shapes: [
+    { type: "rect", top: 78, left: 0, w: 100, h: 10, color: "#CF2027" },
+    { type: "circle", top: 34, left: 35, w: 6, h: 9, color: "#F7D116" },
+    { type: "circle", top: 24, left: 50, w: 6, h: 9, color: "#F7D116" },
+    { type: "circle", top: 34, left: 65, w: 6, h: 9, color: "#F7D116" },
+    { type: "circle", top: 48, left: 70, w: 6, h: 9, color: "#F7D116" },
+    { type: "circle", top: 48, left: 30, w: 6, h: 9, color: "#F7D116" } ] },
+  CA: { stripes: [["#FF0000", 1], ["#FFFFFF", 2], ["#FF0000", 1]], stripesDir: "v", shapes: [
+    { type: "diamond", top: 50, left: 50, w: 16, h: 22, color: "#FF0000" } ] },
+  QA: { stripes: ["#8D1B3D"], shapes: [
+    { type: "rect", top: 0, left: 0, w: 14, h: 100, color: "#FFFFFF" } ] },
+  CO: { stripes: [["#FCD116", 2], ["#003893", 1], ["#CE1126", 1]] },
+  KR: { stripes: ["#FFFFFF"], shapes: [
+    { type: "taegeuk", top: 50, left: 50, w: 38, h: 38, colorTop: "#CD2E3A", colorBottom: "#0047A0" } ] },
+  CI: { stripes: ["#FF8200", "#FFFFFF", "#009E60"], stripesDir: "v" },
+  HR: { stripes: ["#FF0000", "#FFFFFF", "#171796"] },
+  CW: { stripes: ["#002B7F"], shapes: [
+    { type: "rect", top: 74, left: 0, w: 100, h: 10, color: "#F9E814" },
+    { type: "circle", top: 25, left: 62, w: 8, h: 11, color: "#FFFFFF" },
+    { type: "circle", top: 25, left: 74, w: 6, h: 8, color: "#FFFFFF" } ] },
+  EC: { stripes: [["#FFDD00", 2], ["#034EA2", 1], ["#ED1C24", 1]] },
+  EG: { stripes: ["#CE1126", "#FFFFFF", "#000000"] },
+  SCT: { stripes: ["#0065BD"], shapes: [
+    { type: "rect", top: 50, left: 50, w: 18, h: 150, color: "#FFFFFF", center: true, rotate: 45 },
+    { type: "rect", top: 50, left: 50, w: 18, h: 150, color: "#FFFFFF", center: true, rotate: -45 } ] },
+  ES: { stripes: [["#AA151B", 1], ["#F1BF00", 2], ["#AA151B", 1]] },
+  US: { stripes: ["#B22234", "#FFFFFF", "#B22234", "#FFFFFF", "#B22234", "#FFFFFF", "#B22234"], shapes: [
+    { type: "rect", top: 0, left: 0, w: 42, h: 54, color: "#3C3B6E" },
+    { type: "circle", top: 12, left: 10, w: 6, h: 8, color: "#fff" },
+    { type: "circle", top: 12, left: 24, w: 6, h: 8, color: "#fff" },
+    { type: "circle", top: 12, left: 36, w: 6, h: 8, color: "#fff" },
+    { type: "circle", top: 27, left: 17, w: 6, h: 8, color: "#fff" },
+    { type: "circle", top: 27, left: 30, w: 6, h: 8, color: "#fff" },
+    { type: "circle", top: 42, left: 10, w: 6, h: 8, color: "#fff" },
+    { type: "circle", top: 42, left: 24, w: 6, h: 8, color: "#fff" },
+    { type: "circle", top: 42, left: 36, w: 6, h: 8, color: "#fff" } ] },
+  FR: { stripesDir: "v", stripes: ["#0055A4", "#FFFFFF", "#EF4135"] },
+  GH: { stripes: ["#CE1126", "#FCD116", "#006B3F"], shapes: [
+    { type: "circle", top: 50, left: 50, w: 14, h: 20, color: "#000000" } ] },
+  HT: { stripes: [["#00209F", 1], ["#D21034", 1]] },
+  IQ: { stripes: ["#CE1126", "#FFFFFF", "#000000"] },
+  IR: { stripes: ["#239F40", "#FFFFFF", "#DA0000"] },
+  ENG: { stripes: ["#FFFFFF"], shapes: [
+    { type: "rect", top: 50, left: 50, w: 22, h: 100, color: "#CE1124", center: true },
+    { type: "rect", top: 50, left: 50, w: 100, h: 26, color: "#CE1124", center: true } ] },
+  JP: { stripes: ["#FFFFFF"], shapes: [
+    { type: "circle", top: 50, left: 50, w: 34, h: 50, color: "#BC002D" } ] },
+  JO: { stripes: ["#000000", "#FFFFFF", "#007A3D"], shapes: [
+    { type: "triangle", side: "left", w: 45, color: "#CE1126" },
+    { type: "circle", top: 50, left: 18, w: 9, h: 13, color: "#FFFFFF" } ] },
+  MA: { stripes: ["#C1272D"], shapes: [
+    { type: "circle", top: 50, left: 50, w: 26, h: 38, color: "#006233" } ] },
+  MX: { stripesDir: "v", stripes: ["#006847", "#FFFFFF", "#CE1126"], shapes: [
+    { type: "circle", top: 50, left: 50, w: 14, h: 20, color: "#8B5E3C" } ] },
+  NO: { stripes: ["#EF2B2D"], shapes: [
+    { type: "rect", top: 0, left: 28, w: 24, h: 100, color: "#FFFFFF" },
+    { type: "rect", top: 36, left: 0, w: 100, h: 28, color: "#FFFFFF" },
+    { type: "rect", top: 0, left: 33, w: 14, h: 100, color: "#002868" },
+    { type: "rect", top: 42, left: 0, w: 100, h: 16, color: "#002868" } ] },
+  NZ: { stripes: ["#00247D"], shapes: [
+    { type: "circle", top: 30, left: 30, w: 6, h: 9, color: "#fff" },
+    { type: "circle", top: 42, left: 58, w: 7, h: 10, color: "#fff" },
+    { type: "circle", top: 64, left: 36, w: 6, h: 9, color: "#fff" },
+    { type: "circle", top: 70, left: 68, w: 5, h: 7, color: "#fff" } ] },
+  NL: { stripes: ["#AE1C28", "#FFFFFF", "#21468B"] },
+  PA: { stripes: ["#FFFFFF"], shapes: [
+    { type: "rect", top: 0, left: 50, w: 50, h: 50, color: "#DA121A" },
+    { type: "rect", top: 50, left: 0, w: 50, h: 50, color: "#0072CE" },
+    { type: "circle", top: 25, left: 25, w: 14, h: 20, color: "#0072CE" },
+    { type: "circle", top: 75, left: 75, w: 14, h: 20, color: "#DA121A" } ] },
+  PY: { stripes: ["#D52B1E", "#FFFFFF", "#0038A8"] },
+  PT: { stripesDir: "v", stripes: [["#046A38", 2], ["#DA020E", 3]], shapes: [
+    { type: "circle", top: 50, left: 40, w: 20, h: 28, color: "#FFCC00" } ] },
+  CZ: { stripes: ["#FFFFFF", "#D7141A"], shapes: [
+    { type: "triangle", side: "left", w: 42, color: "#11457E" } ] },
+  CD: { stripes: ["#007FFF"], shapes: [
+    { type: "rect", top: 50, left: 50, w: 130, h: 18, color: "#F7D618", center: true, rotate: -22 },
+    { type: "rect", top: 50, left: 50, w: 130, h: 8, color: "#CE1021", center: true, rotate: -22 },
+    { type: "circle", top: 18, left: 18, w: 12, h: 17, color: "#F7D618" } ] },
+  SN: { stripesDir: "v", stripes: ["#00853F", "#FDEF42", "#E31B23"], shapes: [
+    { type: "circle", top: 50, left: 50, w: 14, h: 20, color: "#00853F" } ] },
+  ZA: { stripes: ["#FFFFFF"], shapes: [
+    { type: "rect", top: 0, left: 0, w: 100, h: 50, color: "#DE3831" },
+    { type: "rect", top: 50, left: 0, w: 100, h: 50, color: "#002395" },
+    { type: "rect", top: 50, left: 36, w: 110, h: 26, color: "#007749", center: true, rotate: -14 },
+    { type: "triangle", side: "left", w: 38, color: "#000000" },
+    { type: "rect", top: 50, left: 17, w: 7, h: 130, color: "#FFB81C", center: true, rotate: -14 } ] },
+  CH: { stripes: ["#FF0000"], shapes: [
+    { type: "rect", top: 50, left: 50, w: 20, h: 60, color: "#FFFFFF", center: true },
+    { type: "rect", top: 50, left: 50, w: 60, h: 20, color: "#FFFFFF", center: true } ] },
+  SE: { stripes: ["#006AA7"], shapes: [
+    { type: "rect", top: 0, left: 30, w: 18, h: 100, color: "#FECC00" },
+    { type: "rect", top: 38, left: 0, w: 100, h: 24, color: "#FECC00" } ] },
+  TN: { stripes: ["#E70013"], shapes: [
+    { type: "circle", top: 50, left: 50, w: 46, h: 68, color: "#FFFFFF" },
+    { type: "circle", top: 50, left: 58, w: 34, h: 50, color: "#E70013" },
+    { type: "circle", top: 50, left: 50, w: 10, h: 14, color: "#E70013" } ] },
+  TR: { stripes: ["#E30A17"], shapes: [
+    { type: "circle", top: 50, left: 42, w: 32, h: 48, color: "#FFFFFF" },
+    { type: "circle", top: 50, left: 48, w: 24, h: 36, color: "#E30A17" },
+    { type: "circle", top: 50, left: 62, w: 8, h: 12, color: "#FFFFFF" } ] },
+  UY: { stripes: ["#FFFFFF", "#0038A8", "#FFFFFF", "#0038A8", "#FFFFFF"], shapes: [
+    { type: "circle", top: 25, left: 18, w: 22, h: 32, color: "#FCD116" } ] },
+  UZ: { stripes: ["#0099B5", "#FFFFFF", "#1EB53A"], shapes: [
+    { type: "circle", top: 22, left: 26, w: 16, h: 24, color: "#FFFFFF" },
+    { type: "circle", top: 22, left: 31, w: 12, h: 18, color: "#0099B5" } ] },
+};
+
+const TEAMS = [
+  { code: "DE", name: "Alemania" }, { code: "SA", name: "Arabia Saudita" }, { code: "DZ", name: "Argelia" },
+  { code: "AR", name: "Argentina" }, { code: "AU", name: "Australia" }, { code: "AT", name: "Austria" },
+  { code: "BA", name: "Bosnia y Herzegovina" }, { code: "BR", name: "Brasil" }, { code: "BE", name: "Bélgica" },
+  { code: "CV", name: "Cabo Verde" }, { code: "CA", name: "Canadá" }, { code: "QA", name: "Catar" },
+  { code: "CO", name: "Colombia" }, { code: "KR", name: "Corea del Sur" }, { code: "CI", name: "Costa de Marfil" },
+  { code: "HR", name: "Croacia" }, { code: "CW", name: "Curazao" }, { code: "EC", name: "Ecuador" },
+  { code: "EG", name: "Egipto" }, { code: "SCT", name: "Escocia" }, { code: "ES", name: "España" },
+  { code: "US", name: "Estados Unidos" }, { code: "FR", name: "Francia" }, { code: "GH", name: "Ghana" },
+  { code: "HT", name: "Haití" }, { code: "IQ", name: "Irak" }, { code: "IR", name: "Irán" },
+  { code: "ENG", name: "Inglaterra" }, { code: "JP", name: "Japón" }, { code: "JO", name: "Jordania" },
+  { code: "MA", name: "Marruecos" }, { code: "MX", name: "México" }, { code: "NO", name: "Noruega" },
+  { code: "NZ", name: "Nueva Zelanda" }, { code: "NL", name: "Países Bajos" }, { code: "PA", name: "Panamá" },
+  { code: "PY", name: "Paraguay" }, { code: "PT", name: "Portugal" }, { code: "CZ", name: "República Checa" },
+  { code: "CD", name: "República Democrática del Congo" }, { code: "SN", name: "Senegal" }, { code: "ZA", name: "Sudáfrica" },
+  { code: "CH", name: "Suiza" }, { code: "SE", name: "Suecia" }, { code: "TN", name: "Túnez" },
+  { code: "TR", name: "Turquía" }, { code: "UY", name: "Uruguay" }, { code: "UZ", name: "Uzbekistán" },
+];
+function teamName(code) {
+  const t = TEAMS.find(t => t.code === code);
+  return t ? t.name : code;
+}
+
+function stripesBackground(stripes, dir) {
+  if (stripes.length === 1) {
+    const c = Array.isArray(stripes[0]) ? stripes[0][0] : stripes[0];
+    return `background:${c};`;
+  }
+  const weighted = Array.isArray(stripes[0]);
+  let stops;
+  if (weighted) {
+    const total = stripes.reduce((s, c) => s + c[1], 0);
+    let acc = 0;
+    stops = stripes.map(([c, w]) => {
+      const start = (acc / total) * 100; acc += w; const end = (acc / total) * 100;
+      return `${c} ${start.toFixed(2)}%, ${c} ${end.toFixed(2)}%`;
+    }).join(", ");
+  } else {
+    const n = stripes.length;
+    stops = stripes.map((c, i) => `${c} ${(i / n * 100).toFixed(2)}%, ${c} ${((i + 1) / n * 100).toFixed(2)}%`).join(", ");
+  }
+  return `background:linear-gradient(${dir === "v" ? "90deg" : "180deg"}, ${stops});`;
+}
+function shapeStyle(s) {
+  if (s.type === "rect") {
+    if (s.center) {
+      return `position:absolute;top:${s.top}%;left:${s.left}%;width:${s.w}%;height:${s.h}%;background:${s.color};transform:translate(-50%,-50%)${s.rotate ? ` rotate(${s.rotate}deg)` : ""};`;
+    }
+    return `position:absolute;top:${s.top}%;left:${s.left}%;width:${s.w}%;height:${s.h}%;background:${s.color};`;
+  }
+  if (s.type === "circle") {
+    return `position:absolute;top:${s.top}%;left:${s.left}%;width:${s.w}%;height:${s.h}%;background:${s.color};border-radius:50%;transform:translate(-50%,-50%);`;
+  }
+  if (s.type === "diamond") {
+    return `position:absolute;top:${s.top}%;left:${s.left}%;width:${s.w}%;height:${s.h}%;background:${s.color};transform:translate(-50%,-50%) rotate(45deg);`;
+  }
+  if (s.type === "triangle") {
+    const clip = s.side === "right" ? "polygon(100% 0,100% 100%,0 50%)" : "polygon(0 0,0 100%,100% 50%)";
+    const pos = s.side === "right" ? "right:0;" : "left:0;";
+    return `position:absolute;top:0;${pos}width:${s.w}%;height:100%;background:${s.color};clip-path:${clip};`;
+  }
+  if (s.type === "taegeuk") {
+    return `position:absolute;top:${s.top}%;left:${s.left}%;width:${s.w}%;height:${s.h}%;border-radius:50%;overflow:hidden;background:linear-gradient(135deg, ${s.colorTop} 50%, ${s.colorBottom} 50%);transform:translate(-50%,-50%);`;
+  }
+  return "";
+}
+function flagInner(code) {
+  const f = FLAGS[code];
+  if (!f) return "";
+  const shapesHtml = (f.shapes || []).map(s => `<span style="${shapeStyle(s)}"></span>`).join("");
+  return `<div style="position:relative;width:100%;height:100%;${stripesBackground(f.stripes, f.stripesDir)}">${shapesHtml}</div>`;
+}
+function flagHtml(code) {
+  if (!FLAGS[code]) return `<div class="qn-flag-swatch"></div>`;
+  return `<div class="qn-flag-swatch">${flagInner(code)}</div>`;
+}
+function avatarHtml(user, size) {
+  size = size || 36;
+  const sizeStyle = `width:${size}px;height:${size}px;`;
+  if (user && user.favoriteTeam && FLAGS[user.favoriteTeam]) {
+    return `<div class="qn-avatar" style="${sizeStyle}">${flagInner(user.favoriteTeam)}</div>`;
+  }
+  return `<div class="qn-avatar qn-avatar-empty" style="${sizeStyle}font-size:${Math.round(size * 0.42)}px;">🏆</div>`;
+}
+function groupColor(g) { return GROUP_COLORS[g] || "#F2B705"; }
+function hexToRgba(hex, alpha) {
+  const h = hex.replace("#", "");
+  const r = parseInt(h.substring(0, 2), 16), g = parseInt(h.substring(2, 4), 16), b = parseInt(h.substring(4, 6), 16);
+  return `rgba(${r},${g},${b},${alpha})`;
+}
+
+/* ---------------------------------------------------------------
+   STATE
+--------------------------------------------------------------- */
+let DATA = null;
+let SESSION = null;
+let NOW = Date.now();
+let ADMIN_TAB = "users";
+let PLAYER_TAB = "matches";
+let NOTICE_DISMISSED = false;
+let RULES_ACCEPTED = false;
+let LOGIN_TAB = "player";
+let POLL_TIMER = null;
+let TICK_TIMER = null;
+
+const app = document.getElementById("app");
+const toastEl = document.getElementById("toast");
+
+/* ---------------------------------------------------------------
+   HELPERS
+--------------------------------------------------------------- */
+function escapeHtml(s) {
+  return String(s == null ? "" : s)
+    .replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;").replace(/'/g, "&#39;");
+}
+function stripAccents(s) { return s.normalize("NFD").replace(/[\u0300-\u036f]/g, ""); }
+function normalizeBase(name) {
+  const first = (name || "").trim().split(/\s+/)[0] || "jugador";
+  return stripAccents(first).toLowerCase().replace(/[^a-z]/g, "") || "jugador";
+}
+function generateUsername(name, existingUsers) {
+  const base = normalizeBase(name);
+  let candidate = base, n = 0;
+  while (existingUsers[candidate]) { n++; candidate = base + n; }
+  return candidate;
+}
+function generatePassword(len = 6) {
+  let s = "";
+  for (let i = 0; i < len; i++) s += PASS_CHARS[Math.floor(Math.random() * PASS_CHARS.length)];
+  return s;
+}
+function lockTimeMs(match) { return new Date(match.kickoff).getTime() - LOCK_MINUTES_BEFORE * 60000; }
+function isLocked(match, now) { return now >= lockTimeMs(match); }
+function bonusLockTimeMs(match) { return new Date(match.kickoff).getTime() - BONUS_LOCK_MINUTES_BEFORE * 60000; }
+function isBonusLocked(match, now) { return now >= bonusLockTimeMs(match); }
+/* Calendar-day helpers, anchored to Guatemala time (UTC-6), so "today" and
+   "tomorrow" are computed consistently no matter where the device opening
+   the app is physically located. */
+function guateDateKey(ms) { return new Date(ms - 6 * 3600000).toISOString().slice(0, 10); }
+function bonusDayKey(bm) { return bm.kickoff.slice(0, 10); }
+function addDaysKey(key, delta) {
+  const d = new Date(key + "T00:00:00Z");
+  d.setUTCDate(d.getUTCDate() + delta);
+  return d.toISOString().slice(0, 10);
+}
+function calcBonusPoints(pred, result, points) {
+  if (!pred || !result) return null;
+  return (pred.home === result.home && pred.away === result.away) ? points : 0;
+}
+function formatRemaining(ms) {
+  if (ms <= 0) return null;
+  const totalMin = Math.floor(ms / 60000);
+  const h = Math.floor(totalMin / 60), m = totalMin % 60;
+  return h > 0 ? `${h}h ${m}m` : `${m}m`;
+}
+function ensureScoringShape(d) {
+  if (!d.scoring || typeof d.scoring.outcome !== "number" || typeof d.scoring.perGoal !== "number") {
+    d.scoring = { outcome: 3, perGoal: 1 };
+  }
+  if (!d.bonusPredictions) d.bonusPredictions = {};
+  if (!d.bonusResults) d.bonusResults = {};
+  return d;
+}
+function outcomeHit(pred, result) {
+  return Math.sign(pred.home - pred.away) === Math.sign(result.home - result.away);
+}
+function isExactScore(pred, result) {
+  return pred.home === result.home && pred.away === result.away;
+}
+function calcPoints(pred, result, scoring) {
+  if (!pred || !result) return null;
+  let points = 0;
+  if (outcomeHit(pred, result)) points += scoring.outcome;
+  if (pred.home === result.home) points += scoring.perGoal;
+  if (pred.away === result.away) points += scoring.perGoal;
+  return points;
+}
+function pointsBreakdown(pred, result, scoring) {
+  const oh = outcomeHit(pred, result);
+  const hh = pred.home === result.home;
+  const ah = pred.away === result.away;
+  const parts = [];
+  parts.push(`${oh ? "✓" : "✗"} ganador/empate +${oh ? scoring.outcome : 0}`);
+  parts.push(`${hh ? "✓" : "✗"} goles local +${hh ? scoring.perGoal : 0}`);
+  parts.push(`${ah ? "✓" : "✗"} goles visita +${ah ? scoring.perGoal : 0}`);
+  return parts.join(" · ");
+}
+function buildLeaderboard(data) {
+  const rows = Object.entries(data.users).map(([username, u]) => {
+    let total = 0, exact = 0, hits = 0, played = 0, bonusPts = 0, bonusHits = 0;
+    MATCHES.forEach(m => {
+      const pred = data.predictions[username] && data.predictions[username][m.id];
+      const result = data.results[m.id];
+      if (pred && result) {
+        played++;
+        total += calcPoints(pred, result, data.scoring);
+        if (isExactScore(pred, result)) exact++;
+        else if (outcomeHit(pred, result)) hits++;
+      }
+    });
+    BONUS_MATCHES.forEach(bm => {
+      const pred = data.bonusPredictions[username] && data.bonusPredictions[username][bm.id];
+      const result = data.bonusResults[bm.id];
+      if (pred && result) {
+        const pts = calcBonusPoints(pred, result, bm.points);
+        bonusPts += pts;
+        if (pts > 0) bonusHits++;
+      }
+    });
+    total += bonusPts;
+    return { username, name: u.name, total, exact, hits, played, bonusPts, bonusHits, favoriteTeam: u.favoriteTeam || null };
+  });
+  rows.sort((a, b) => b.total - a.total || b.exact - a.exact || a.name.localeCompare(b.name));
+  return rows;
+}
+function clone(o) { return JSON.parse(JSON.stringify(o)); }
+
+let toastTimerId = null;
+function showToast(msg) {
+  toastEl.textContent = msg;
+  toastEl.classList.add("show");
+  clearTimeout(toastTimerId);
+  toastTimerId = setTimeout(() => toastEl.classList.remove("show"), 2200);
+}
+
+/* ---------------------------------------------------------------
+   STORAGE
+--------------------------------------------------------------- */
+/* ---------------------------------------------------------------
+   FIREBASE STORAGE LAYER
+   – Shared data (quiniela state) → Firebase Realtime Database
+   – Session (who is logged in) → localStorage (per-device only)
+--------------------------------------------------------------- */
+const DB_PATH = "quiniela-2026";   // root node in your Firebase DB
+
+/* Wait for the Firebase module to initialise (it loads async) */
+function waitForFirebase(timeout = 8000) {
+  return new Promise((resolve, reject) => {
+    const start = Date.now();
+    const check = () => {
+      if (window._fbDb) return resolve();
+      if (Date.now() - start > timeout) return reject(new Error("Firebase no cargó"));
+      setTimeout(check, 80);
+    };
+    check();
+  });
+}
+
+async function fbRead() {
+  const snap = await window._fbGet(window._fbRef(window._fbDb, DB_PATH));
+  return snap.exists() ? snap.val() : null;
+}
+
+async function fbWrite(value) {
+  await window._fbSet(window._fbRef(window._fbDb, DB_PATH), value);
+}
+
+/* Listen for remote changes and re-render when another client writes */
+function startRealtimeSync() {
+  window._fbOnValue(window._fbRef(window._fbDb, DB_PATH), (snap) => {
+    if (!snap.exists()) return;
+    const remote = ensureScoringShape(snap.val());
+    /* Ignore the echo of our own recent write */
+    if (Date.now() - lastLocalWriteAt < 8000) return;
+    DATA = remote;
+    const active = document.activeElement;
+    const typing = active && active.tagName === "INPUT" &&
+      document.getElementById("qn-content") &&
+      document.getElementById("qn-content").contains(active);
+    if (!typing) render();
+  });
+}
+
+async function loadData() {
+  try {
+    const raw = await fbRead();
+    if (raw) {
+      DATA = ensureScoringShape(raw);
+      return;
+    }
+  } catch (e) {
+    if (DATA) return;
+  }
+  if (!DATA) {
+    DATA = clone(DEFAULT_DATA);
+    try { await fbWrite(DATA); } catch (e2) {}
+  }
+}
+
+let lastLocalWriteAt = 0;
+async function persist(next) {
+  DATA = next;
+  lastLocalWriteAt = Date.now();
+  try {
+    await fbWrite(next);
+  } catch (e) {
+    showToast("No se pudo guardar. Intenta de nuevo.");
+  }
+}
+
+/* Session lives in localStorage — no server needed, per-device */
+async function restoreSession() {
+  try {
+    const raw = localStorage.getItem(SESSION_KEY);
+    if (raw) SESSION = JSON.parse(raw);
+  } catch (e) {}
+}
+async function doLogin(role, username) {
+  SESSION = { role, username: username || null };
+  try { localStorage.setItem(SESSION_KEY, JSON.stringify(SESSION)); } catch (e) {}
+  if (role === "admin") { ADMIN_TAB = "users"; } else { PLAYER_TAB = "matches"; NOTICE_DISMISSED = false; RULES_ACCEPTED = false; }
+  render();
+}
+async function doLogout() {
+  SESSION = null;
+  RULES_ACCEPTED = false;
+  try { localStorage.removeItem(SESSION_KEY); } catch (e) {}
+  render();
+}
+
+/* ---------------------------------------------------------------
+   RENDER: LOGIN
+--------------------------------------------------------------- */
+function renderLogin() {
+  const confettiHtml = CONFETTI.map(c => `
+    <div class="qn-confetti-piece" style="top:${c.top};left:${c.left};width:${c.size}px;height:${c.size}px;background:${c.color};transform:rotate(${c.rotate}deg);opacity:0.75;"></div>
+  `).join("");
+
+  app.innerHTML = `
+    <div class="qn-login-wrap">
+      <div class="qn-beam qn-beam-1"></div>
+      <div class="qn-beam qn-beam-2"></div>
+      <div class="qn-beam qn-beam-3"></div>
+      <div class="qn-beam qn-beam-4"></div>
+      ${confettiHtml}
+      <svg class="qn-pitch-lines" viewBox="0 0 600 120" preserveAspectRatio="xMidYMax meet" aria-hidden="true">
+        <line x1="0" y1="14" x2="600" y2="14" stroke="rgba(255,255,255,0.16)" stroke-width="2" />
+        <circle cx="300" cy="14" r="46" fill="none" stroke="rgba(255,255,255,0.16)" stroke-width="2" />
+      </svg>
+
+      <div class="qn-login-stage">
+        <div class="qn-emblem-wrap" aria-hidden="true">
+          <div class="qn-emblem-glow"></div>
+          <div class="qn-emblem-ring r1"></div>
+          <div class="qn-emblem-ring r2"></div>
+          <div class="qn-emblem-beam"></div>
+          <svg class="qn-emblem-trophy" viewBox="0 0 100 100" fill="none" stroke="var(--gold)" stroke-width="4" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M30 15 H70 V35 C70 55 58 65 50 65 C42 65 30 55 30 35 Z" />
+            <path d="M30 20 C18 20 15 35 25 42" />
+            <path d="M70 20 C82 20 85 35 75 42" />
+            <line x1="50" y1="65" x2="50" y2="83" />
+            <path d="M36 83 H64 L68 89 H32 Z" />
+          </svg>
+        </div>
+
+        <div class="qn-login-card">
+          <div class="qn-hero">
+            <svg class="qn-trophy-icon" viewBox="0 0 100 100" fill="none" stroke="var(--gold)" stroke-width="4" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M30 15 H70 V35 C70 55 58 65 50 65 C42 65 30 55 30 35 Z" />
+              <path d="M30 20 C18 20 15 35 25 42" />
+              <path d="M70 20 C82 20 85 35 75 42" />
+              <line x1="50" y1="65" x2="50" y2="83" />
+              <path d="M36 83 H64 L68 89 H32 Z" />
+            </svg>
+            <h1>QUINIELA <span>MUNDIAL 2026</span></h1>
+            <p>Fase de grupos</p>
+          </div>
+          <div class="qn-tabs">
+            <button class="qn-tab ${LOGIN_TAB === "player" ? "active" : ""}" data-action="login-tab" data-tab="player">Participante</button>
+            <button class="qn-tab ${LOGIN_TAB === "admin" ? "active" : ""}" data-action="login-tab" data-tab="admin">Administrador</button>
+          </div>
+          <div id="login-error"></div>
+          ${LOGIN_TAB === "player" ? `
+            <form data-action="login-player-submit">
+              <div class="qn-field">
+                <label>Usuario</label>
+                <input class="qn-input" id="login-username" placeholder="tu usuario" autocomplete="username" />
+              </div>
+              <div class="qn-field">
+                <label>Contraseña</label>
+              <input class="qn-input" id="login-password" type="password" placeholder="••••••" autocomplete="current-password" />
+            </div>
+            <button class="qn-btn" type="submit">Entrar ›</button>
+            <p style="font-size:12px;color:var(--muted);margin-top:14px;text-align:center;">
+              Tu usuario y contraseña te los da el administrador de la quiniela.
+            </p>
+          </form>
+        ` : `
+          <form data-action="login-admin-submit">
+            <div class="qn-field">
+              <label>Contraseña de administrador</label>
+              <input class="qn-input" id="login-admin-password" type="password" placeholder="••••••" autocomplete="current-password" />
+            </div>
+            <button class="qn-btn" type="submit">🛡️ Entrar como admin</button>
+          </form>
+        `}
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+/* ---------------------------------------------------------------
+   RENDER: SHARED PIECES
+--------------------------------------------------------------- */
+function topBarHtml(who, extra, variant, avatar) {
+  return `
+    <div class="qn-topbar ${variant === "admin" ? "qn-topbar-admin" : ""}">
+      <div class="qn-brand">
+        <span style="font-size:20px;">🏆</span>
+        <h2>Quiniela <span>2026</span></h2>
+      </div>
+      <div class="qn-who">
+        ${avatar || ""}
+        <span class="name">${escapeHtml(who)}${extra ? " · " + escapeHtml(extra) : ""}</span>
+        <button class="qn-iconbtn" data-action="logout">🚪 Salir</button>
+      </div>
+    </div>
+  `;
+}
+
+function leaderboardHtml(leaderboard, highlight, scoring) {
+  const rows = leaderboard.length === 0
+    ? `<div class="qn-empty">Aún no hay participantes registrados.</div>`
+    : leaderboard.map((r, i) => `
+        <div class="qn-lb-row ${i === 0 && r.total > 0 ? "top1" : ""}">
+          <div class="qn-lb-rank">${i === 0 && r.total > 0 ? "👑" : i + 1}</div>
+          ${avatarHtml({ favoriteTeam: r.favoriteTeam }, 30)}
+          <div style="flex:1;">
+            <div class="qn-lb-name" ${highlight === r.username ? 'style="color:var(--gold-soft);"' : ""}>
+              ${escapeHtml(r.name)}${highlight === r.username ? " (tú)" : ""}
+            </div>
+            <div class="qn-lb-meta">
+              <span>${r.played}/${MATCHES.length} jugados</span>
+              <span>🎯 ${r.exact} exactos</span>
+              <span>✓ ${r.hits} resultados</span>
+              ${r.bonusPts > 0 ? `<span style="color:var(--gold-soft);">⭐ +${r.bonusPts} bonus</span>` : ""}
+            </div>
+          </div>
+          <div class="qn-lb-total mono">${r.total}</div>
+        </div>
+      `).join("");
+  return `
+    <h2 class="qn-section-title">🏆 Tabla de posiciones</h2>
+    <div style="font-size:12px;color:var(--muted);margin-bottom:14px;">
+      Acertar ganador o empate = ${scoring.outcome} pts · acertar los goles de cada equipo = ${scoring.perGoal} pt c/u · marcador exacto = ${scoring.outcome + 2 * scoring.perGoal} pts (automático)
+    </div>
+    ${rows}
+  `;
+}
+
+/* ---------------------------------------------------------------
+   RENDER: PLAYER
+--------------------------------------------------------------- */
+function rulesModalHtml() {
+  return `
+    <div class="qn-modal-overlay" id="rules-modal">
+      <div class="qn-modal">
+        <div class="qn-modal-logo">🏆</div>
+        <div class="qn-modal-title">Reglas</div>
+        <div class="qn-modal-sub">Segunda Quiniela Extraordinaria</div>
+        <hr class="qn-modal-divider">
+        <div class="qn-modal-rule">
+          <span class="bullet">➤</span>
+          <span>Acertar el ganador o empate de un partido acumula <strong>3 pts</strong>.</span>
+        </div>
+        <div class="qn-modal-rule">
+          <span class="bullet">➤</span>
+          <span>Acertar la cantidad de goles de un equipo acumula <strong>1 pt</strong>. Por equipo acertado.</span>
+        </div>
+        <div class="qn-modal-rule">
+          <span class="bullet">➤</span>
+          <span>Acertar el marcador exacto acumula <strong>5 pts</strong>.</span>
+        </div>
+        <div class="qn-modal-sub-rule"><span class="dot">○</span><span>3 pts. Por resultado</span></div>
+        <div class="qn-modal-sub-rule"><span class="dot">○</span><span>1 pt. Por goles del equipo A</span></div>
+        <div class="qn-modal-sub-rule"><span class="dot">○</span><span>1 pt. Por goles del equipo B</span></div>
+        <div class="qn-modal-section">Bonus</div>
+        <div class="qn-modal-rule">
+          <span class="bullet">➤</span>
+          <span>Acertar el marcador exacto acumula <strong>3 pts</strong>.</span>
+        </div>
+        <hr class="qn-modal-divider">
+        <div class="qn-modal-title" style="font-size:17px;margin-top:4px;">Premio</div>
+        <div style="font-size:13px;color:var(--cream);margin:10px 0 6px;">
+          1 cuota en la actividad del <strong>10 de Julio</strong>.
+        </div>
+        <div style="font-size:12px;color:var(--muted);line-height:1.55;margin-bottom:4px;">
+          <em>*Nota: Si existiera empates en puntos se distribuye en la cantidad de participantes que tengan el mismo punteo.</em>
+        </div>
+        <div style="font-size:12px;color:var(--muted);margin:8px 0 2px 8px;">Actividad Q. 140.00 total</div>
+        <div style="font-size:12px;color:var(--muted);margin:2px 0 2px 8px;">Integrantes del grupo 7, de estos 3 tuvieron los mismos puntos</div>
+        <div style="font-size:12px;color:var(--muted);margin:2px 0 8px 24px;">Q. 140.00 / 5 = Q. 28.00 por persona</div>
+        <div style="font-size:12px;color:var(--muted);line-height:1.55;">
+          Entonces los 4 que no ganaron cada uno paga los Q. 28.00 y los 3 que tuvieron la misma puntuación entre los 3 pagarían únicamente Q28.00.
+        </div>
+        <hr class="qn-modal-divider">
+        <div class="qn-modal-footer">Auditoría interna y Control Interno</div>
+        <button class="qn-modal-btn" data-action="accept-rules">Entendido — ¡A jugar!</button>
+      </div>
+    </div>
+  `;
+}
+
+function renderPlayer() {
+  const username = SESSION.username;
+  const user = DATA.users[username];
+  if (!user) { doLogout(); return; }
+
+  const leaderboard = buildLeaderboard(DATA);
+  const myRank = leaderboard.findIndex(r => r.username === username) + 1;
+
+  const todayKey = guateDateKey(NOW);
+  const dayOfBonus = BONUS_MATCHES.find(bm => bonusDayKey(bm) === todayKey);
+  const dayBeforeBonus = BONUS_MATCHES.find(bm => bonusDayKey(bm) === addDaysKey(todayKey, 1));
+  const notice = (dayBeforeBonus && !NOTICE_DISMISSED)
+    ? noticeBannerHtml(dayBeforeBonus, BONUS_MATCHES.indexOf(dayBeforeBonus) + 1, BONUS_MATCHES.length)
+    : "";
+
+  let body = "";
+  if (PLAYER_TAB === "matches") {
+    body = (dayOfBonus ? bonusCardHtml(dayOfBonus, username) : "") + DAYS.map(day => `
+      <div class="qn-day-header">${day}</div>
+      <div class="qn-grid">
+        ${MATCHES.filter(m => m.day === day).map(m => matchCardHtml(m, username)).join("")}
+      </div>
+    `).join("");
+  } else if (PLAYER_TAB === "profile") {
+    body = playerProfileHtml(username, user);
+  } else {
+    body = leaderboardHtml(leaderboard, username, DATA.scoring);
+  }
+
+  app.innerHTML = `
+    <div class="qn-shell">
+      ${topBarHtml(user.name, myRank ? `#${myRank} en la tabla` : null, null, avatarHtml(user, 32))}
+      <div class="qn-nav">
+        <button class="qn-navbtn ${PLAYER_TAB === "matches" ? "active" : ""}" data-action="set-tab" data-tab="matches">⏱ Pronósticos</button>
+        <button class="qn-navbtn ${PLAYER_TAB === "table" ? "active" : ""}" data-action="set-tab" data-tab="table">🏆 Tabla de posiciones</button>
+        <button class="qn-navbtn ${PLAYER_TAB === "profile" ? "active" : ""}" data-action="set-tab" data-tab="profile">👤 Perfil</button>
+      </div>
+      <div class="qn-content" id="qn-content">${notice}${body}</div>
+      ${RULES_ACCEPTED ? "" : rulesModalHtml()}
+    </div>
+  `;
+}
+
+function playerProfileHtml(username, user) {
+  return `
+    <h2 class="qn-section-title">👤 Perfil</h2>
+    <div class="qn-panel" style="text-align:center;">
+      <div style="display:flex;justify-content:center;margin-bottom:14px;">
+        ${avatarHtml(user, 84)}
+      </div>
+      <div style="font-size:16px;font-weight:700;">${escapeHtml(user.name)}</div>
+      <div style="font-size:12.5px;color:var(--muted);margin-top:4px;">
+        ${user.favoriteTeam ? "Hincha de " + escapeHtml(teamName(user.favoriteTeam)) : "Aún no eliges un equipo favorito"}
+      </div>
+    </div>
+
+    <div class="qn-panel">
+      <div class="qn-subhead">Equipo favorito</div>
+      <div style="font-size:12px;color:var(--muted);margin-bottom:12px;">
+        La bandera del equipo que elijas será tu foto de perfil en toda la quiniela.
+      </div>
+      <div class="qn-field">
+        <label>Selecciona tu equipo</label>
+        <select class="qn-input" id="favorite-team-select">
+          <option value="">Sin seleccionar</option>
+          ${TEAMS.map(t => `<option value="${t.code}" ${user.favoriteTeam === t.code ? "selected" : ""}>${escapeHtml(t.name)}</option>`).join("")}
+        </select>
+      </div>
+      <button class="qn-btn qn-btn-ghost" data-action="save-favorite-team">Guardar equipo favorito</button>
+    </div>
+
+    <div class="qn-panel">
+      <div class="qn-subhead">Cambiar contraseña</div>
+      <form data-action="change-player-pass-submit">
+        <div id="player-pass-error"></div>
+        <div class="qn-field">
+          <label>Contraseña actual</label>
+          <input class="qn-input" type="password" id="player-pass-current" autocomplete="current-password" />
+        </div>
+        <div class="qn-field">
+          <label>Nueva contraseña</label>
+          <input class="qn-input" type="password" id="player-pass-new" autocomplete="new-password" />
+        </div>
+        <button class="qn-btn qn-btn-ghost" type="submit">Cambiar contraseña</button>
+      </form>
+    </div>
+  `;
+}
+
+function matchCardHtml(m, username) {
+  const locked = isLocked(m, NOW);
+  const saved = DATA.predictions[username] && DATA.predictions[username][m.id];
+  const result = DATA.results[m.id];
+  const pts = result && saved ? calcPoints(saved, result, DATA.scoring) : null;
+  const remain = formatRemaining(lockTimeMs(m) - NOW);
+  const homeVal = saved ? saved.home : "";
+  const awayVal = saved ? saved.away : "";
+  const gColor = groupColor(m.group);
+
+  let footer;
+  if (result) {
+    footer = pts !== null
+      ? `<div><span class="qn-points-tag">Resultado ${result.home}-${result.away} · +${pts} pts</span>
+          <div style="font-size:10px;color:var(--muted);margin-top:4px;">${pointsBreakdown(saved, result, DATA.scoring)}</div></div>`
+      : `<span class="qn-saved-tag">Sin pronóstico</span>`;
+  } else if (saved) {
+    footer = `<span class="qn-saved-tag" id="saved-tag-${m.id}">✓ Guardado: ${saved.home}-${saved.away}</span>`;
+  } else {
+    footer = `<span class="qn-saved-tag" id="saved-tag-${m.id}">Sin guardar</span>`;
+  }
+
+  return `
+    <div class="qn-card" id="card-${m.id}" style="border-left:4px solid ${gColor};">
+      <div class="qn-card-head">
+        <span class="qn-badge" style="color:${gColor};border-color:${hexToRgba(gColor, 0.4)};background:${hexToRgba(gColor, 0.12)};">Grupo ${m.group}</span>
+        <span class="qn-status ${locked ? "locked" : ""}" id="status-${m.id}">
+          ${locked ? "🔒 Cerrado" : `⏱ Cierra en ${remain}`}
+        </span>
+      </div>
+      <div class="qn-team-row">
+        ${flagHtml(m.home.code)}
+        <span class="qn-team-name">${m.home.name}</span>
+        <input class="qn-score-input mono" id="pred-home-${m.id}" inputmode="numeric" maxlength="2"
+          value="${escapeHtml(homeVal)}" ${locked ? "disabled" : ""} placeholder="-" data-saved="${homeVal}" />
+      </div>
+      <div class="qn-team-row">
+        ${flagHtml(m.away.code)}
+        <span class="qn-team-name">${m.away.name}</span>
+        <input class="qn-score-input mono" id="pred-away-${m.id}" inputmode="numeric" maxlength="2"
+          value="${escapeHtml(awayVal)}" ${locked ? "disabled" : ""} placeholder="-" data-saved="${awayVal}" />
+      </div>
+      <div style="font-size:11px;color:var(--muted);margin-top:4px;">${m.timeLabel}</div>
+      <div class="qn-card-foot" id="foot-${m.id}">
+        ${footer}
+        ${!locked ? `<button class="qn-save" id="save-btn-${m.id}" data-action="save-pred" data-match="${m.id}">Guardar</button>` : ""}
+      </div>
+    </div>
+  `;
+}
+
+function bonusCardHtml(bm, username) {
+  const locked = isBonusLocked(bm, NOW);
+  const saved = DATA.bonusPredictions[username] && DATA.bonusPredictions[username][bm.id];
+  const result = DATA.bonusResults[bm.id];
+  const pts = result && saved ? calcBonusPoints(saved, result, bm.points) : null;
+  const remain = formatRemaining(bonusLockTimeMs(bm) - NOW);
+  const homeVal = saved ? saved.home : "";
+  const awayVal = saved ? saved.away : "";
+
+  let footer;
+  if (result) {
+    footer = pts !== null
+      ? `<span class="qn-points-tag">Resultado ${result.home}-${result.away} · ${pts > 0 ? `+${pts} pts ⭐` : "+0 pts"}</span>`
+      : `<span class="qn-saved-tag">Sin pronóstico</span>`;
+  } else if (saved) {
+    footer = `<span class="qn-saved-tag" id="saved-tag-${bm.id}">✓ Guardado: ${saved.home}-${saved.away}</span>`;
+  } else {
+    footer = `<span class="qn-saved-tag" id="saved-tag-${bm.id}">Sin guardar</span>`;
+  }
+
+  return `
+    <div class="qn-bonus-card" id="card-${bm.id}">
+      <div class="qn-bonus-tag">⭐ Partido bonus · +${bm.points} pts por marcador exacto</div>
+      <div class="qn-bonus-head">
+        <div>
+          <div class="qn-bonus-title">${bm.home.name} vs ${bm.away.name}</div>
+          <div class="qn-bonus-sub">Grupo ${bm.group} · ${bm.day} · ${bm.timeLabel}</div>
+        </div>
+        <span class="qn-status ${locked ? "locked" : ""}" id="status-${bm.id}">
+          ${locked ? "🔒 Cerrado" : `⏱ Cierra en ${remain}`}
+        </span>
+      </div>
+      <div class="qn-team-row">
+        ${flagHtml(bm.home.code)}
+        <span class="qn-team-name">${bm.home.name}</span>
+        <input class="qn-score-input mono" id="pred-home-${bm.id}" inputmode="numeric" maxlength="2"
+          value="${escapeHtml(homeVal)}" ${locked ? "disabled" : ""} placeholder="-" data-saved="${homeVal}" />
+      </div>
+      <div class="qn-team-row">
+        ${flagHtml(bm.away.code)}
+        <span class="qn-team-name">${bm.away.name}</span>
+        <input class="qn-score-input mono" id="pred-away-${bm.id}" inputmode="numeric" maxlength="2"
+          value="${escapeHtml(awayVal)}" ${locked ? "disabled" : ""} placeholder="-" data-saved="${awayVal}" />
+      </div>
+      <div class="qn-bonus-foot" id="foot-${bm.id}">
+        ${footer}
+        ${!locked ? `<button class="qn-save" id="save-btn-${bm.id}" data-action="save-bonus-pred" data-match="${bm.id}">Guardar pronóstico bonus</button>` : ""}
+      </div>
+    </div>
+  `;
+}
+
+function noticeBannerHtml(bm, index, total) {
+  return `
+    <div class="qn-notice-banner" id="notice-banner">
+      <span class="icon">🔮</span>
+      <div class="text">
+        Mañana habrá una <b>sorpresa (${index}/${total})</b>: un partido bonus de <b>+${bm.points} puntos</b> por marcador exacto. ¡Prepárate!
+      </div>
+      <button class="qn-notice-close" data-action="dismiss-notice" title="Cerrar">✕</button>
+    </div>
+  `;
+}
+
+
+function savePredFooterAndStatus(matchId) {
+  // refresh just this card's footer + status badge without rebuilding the whole grid
+  const username = SESSION.username;
+  const m = matchById(matchId);
+  const locked = isLocked(m, NOW);
+  const saved = DATA.predictions[username] && DATA.predictions[username][matchId];
+  const result = DATA.results[matchId];
+  const pts = result && saved ? calcPoints(saved, result, DATA.scoring) : null;
+
+  const footEl = document.getElementById(`foot-${matchId}`);
+  if (footEl) {
+    let footer;
+    if (result) {
+      footer = pts !== null
+        ? `<div><span class="qn-points-tag">Resultado ${result.home}-${result.away} · +${pts} pts</span>
+            <div style="font-size:10px;color:var(--muted);margin-top:4px;">${pointsBreakdown(saved, result, DATA.scoring)}</div></div>`
+        : `<span class="qn-saved-tag">Sin pronóstico</span>`;
+    } else if (saved) {
+      footer = `<span class="qn-saved-tag">✓ Guardado: ${saved.home}-${saved.away}</span>`;
+    } else {
+      footer = `<span class="qn-saved-tag">Sin guardar</span>`;
+    }
+    footEl.innerHTML = `${footer}${!locked ? `<button class="qn-save" id="save-btn-${matchId}" data-action="save-pred" data-match="${matchId}">Guardar</button>` : ""}`;
+  }
+  const homeInput = document.getElementById(`pred-home-${matchId}`);
+  const awayInput = document.getElementById(`pred-away-${matchId}`);
+  if (homeInput && saved) homeInput.dataset.saved = saved.home;
+  if (awayInput && saved) awayInput.dataset.saved = saved.away;
+}
+
+async function savePrediction(matchId) {
+  const username = SESSION.username;
+  const homeInput = document.getElementById(`pred-home-${matchId}`);
+  const awayInput = document.getElementById(`pred-away-${matchId}`);
+  const home = homeInput.value.trim();
+  const away = awayInput.value.trim();
+  if (home === "" || away === "") { showToast("Pon un marcador para ambos equipos."); return; }
+  const next = clone(DATA);
+  if (!next.predictions[username]) next.predictions[username] = {};
+  next.predictions[username][matchId] = { home: Number(home), away: Number(away), updatedAt: new Date().toISOString() };
+  await persist(next);
+  savePredFooterAndStatus(matchId);
+  showToast("Pronóstico guardado");
+}
+
+function saveBonusPredFooterAndStatus(matchId) {
+  const username = SESSION.username;
+  const bm = bonusById(matchId);
+  const locked = isBonusLocked(bm, NOW);
+  const saved = DATA.bonusPredictions[username] && DATA.bonusPredictions[username][matchId];
+  const result = DATA.bonusResults[matchId];
+  const pts = result && saved ? calcBonusPoints(saved, result, bm.points) : null;
+
+  const footEl = document.getElementById(`foot-${matchId}`);
+  if (footEl) {
+    let footer;
+    if (result) {
+      footer = pts !== null
+        ? `<span class="qn-points-tag">Resultado ${result.home}-${result.away} · ${pts > 0 ? `+${pts} pts ⭐` : "+0 pts"}</span>`
+        : `<span class="qn-saved-tag">Sin pronóstico</span>`;
+    } else if (saved) {
+      footer = `<span class="qn-saved-tag">✓ Guardado: ${saved.home}-${saved.away}</span>`;
+    } else {
+      footer = `<span class="qn-saved-tag">Sin guardar</span>`;
+    }
+    footEl.innerHTML = `${footer}${!locked ? `<button class="qn-save" id="save-btn-${matchId}" data-action="save-bonus-pred" data-match="${matchId}">Guardar pronóstico bonus</button>` : ""}`;
+  }
+  const homeInput = document.getElementById(`pred-home-${matchId}`);
+  const awayInput = document.getElementById(`pred-away-${matchId}`);
+  if (homeInput && saved) homeInput.dataset.saved = saved.home;
+  if (awayInput && saved) awayInput.dataset.saved = saved.away;
+}
+
+async function saveBonusPrediction(matchId) {
+  const username = SESSION.username;
+  const homeInput = document.getElementById(`pred-home-${matchId}`);
+  const awayInput = document.getElementById(`pred-away-${matchId}`);
+  const home = homeInput.value.trim();
+  const away = awayInput.value.trim();
+  if (home === "" || away === "") { showToast("Pon un marcador para ambos equipos."); return; }
+  const next = clone(DATA);
+  if (!next.bonusPredictions[username]) next.bonusPredictions[username] = {};
+  next.bonusPredictions[username][matchId] = { home: Number(home), away: Number(away), updatedAt: new Date().toISOString() };
+  await persist(next);
+  saveBonusPredFooterAndStatus(matchId);
+  showToast("Pronóstico bonus guardado ⭐");
+}
+
+/* ---------------------------------------------------------------
+   RENDER: ADMIN
+--------------------------------------------------------------- */
+function renderAdmin() {
+  let body = "";
+  if (ADMIN_TAB === "users") body = adminUsersHtml();
+  else if (ADMIN_TAB === "results") body = adminResultsHtml();
+  else if (ADMIN_TAB === "predictions") body = adminPredictionsHtml();
+  else if (ADMIN_TAB === "table") body = leaderboardHtml(buildLeaderboard(DATA), null, DATA.scoring);
+  else if (ADMIN_TAB === "settings") body = adminSettingsHtml();
+
+  app.innerHTML = `
+    <div class="qn-shell qn-shell-admin">
+      ${topBarHtml("Administrador", null, "admin")}
+      <div class="qn-nav qn-nav-admin">
+        <button class="qn-navbtn ${ADMIN_TAB === "users" ? "active" : ""}" data-action="set-tab" data-tab="users">👥 Participantes</button>
+        <button class="qn-navbtn ${ADMIN_TAB === "results" ? "active" : ""}" data-action="set-tab" data-tab="results">🎯 Resultados</button>
+        <button class="qn-navbtn ${ADMIN_TAB === "predictions" ? "active" : ""}" data-action="set-tab" data-tab="predictions">📋 Pronósticos</button>
+        <button class="qn-navbtn ${ADMIN_TAB === "table" ? "active" : ""}" data-action="set-tab" data-tab="table">🏆 Tabla de posiciones</button>
+        <button class="qn-navbtn ${ADMIN_TAB === "settings" ? "active" : ""}" data-action="set-tab" data-tab="settings">⚙️ Configuración</button>
+      </div>
+      <div class="qn-content" id="qn-content">${body}</div>
+    </div>
+  `;
+}
+
+function adminUsersHtml() {
+  const entries = Object.entries(DATA.users).sort((a, b) => a[1].name.localeCompare(b[1].name));
+  const list = entries.length === 0
+    ? `<div class="qn-empty">Todavía no hay participantes. Agrega el primero arriba.</div>`
+    : entries.map(([username, u]) => {
+        const waText = encodeURIComponent(`¡Hola ${u.name}! Aquí están tus credenciales para la Quiniela Mundial 2026:\nUsuario: ${username}\nContraseña: ${u.password}`);
+        const copyText = encodeURIComponent(`Usuario: ${username}\nContraseña: ${u.password}`);
+        return `
+          <div class="qn-user-card">
+            <div>
+              <div class="qn-user-name">${escapeHtml(u.name)}</div>
+              <div style="margin-top:6px;">
+                <span class="qn-cred-pill">🔑 ${escapeHtml(username)} / ${escapeHtml(u.password)}</span>
+              </div>
+            </div>
+            <div class="qn-user-actions">
+              <button class="qn-tiny-btn" data-action="copy" data-text="${copyText}">📋 Copiar</button>
+              <a class="qn-tiny-btn" href="https://wa.me/?text=${waText}" target="_blank" rel="noreferrer">Enviar por WhatsApp</a>
+              <button class="qn-tiny-btn" data-action="regen-pass" data-username="${escapeHtml(username)}">Nueva clave</button>
+              <button class="qn-tiny-btn danger" data-action="remove-user" data-username="${escapeHtml(username)}">🗑️</button>
+            </div>
+          </div>
+        `;
+      }).join("");
+
+  return `
+    <h2 class="qn-section-title">👥 Participantes</h2>
+    <div class="qn-panel">
+      <form class="qn-add-row" data-action="add-user-submit">
+        <input class="qn-input" id="new-user-name" placeholder="Nombre del participante (ej. María López)" />
+        <button class="qn-btn qn-btn-add" type="submit" style="width:auto;padding:0 18px;">➕ Agregar</button>
+      </form>
+      <div style="font-size:12px;color:var(--muted);">El usuario y la contraseña se generan automáticamente.</div>
+      <div class="qn-user-list">${list}</div>
+    </div>
+  `;
+}
+
+function adminResultsHtml() {
+  const rows = MATCHES.map(m => {
+    const saved = DATA.results[m.id];
+    return `
+      <div class="qn-result-row">
+        <div class="qn-result-teams">
+          <span class="qn-badge" style="color:${groupColor(m.group)};border-color:${hexToRgba(groupColor(m.group), 0.4)};background:${hexToRgba(groupColor(m.group), 0.12)};">G${m.group}</span>
+          <span style="display:inline-flex;align-items:center;gap:6px;">${flagHtml(m.home.code)} ${m.home.name}</span>
+          <span style="color:var(--muted);">vs</span>
+          <span style="display:inline-flex;align-items:center;gap:6px;">${flagHtml(m.away.code)} ${m.away.name}</span>
+        </div>
+        <input class="qn-score-input mono" id="res-home-${m.id}" style="width:40px;height:38px;font-size:16px;"
+          inputmode="numeric" maxlength="2" value="${saved ? saved.home : ""}" placeholder="-" />
+        <span style="color:var(--muted);">-</span>
+        <input class="qn-score-input mono" id="res-away-${m.id}" style="width:40px;height:38px;font-size:16px;"
+          inputmode="numeric" maxlength="2" value="${saved ? saved.away : ""}" placeholder="-" />
+        <button class="qn-save" data-action="save-result" data-match="${m.id}">${saved ? "Actualizar" : "Guardar"}</button>
+      </div>
+    `;
+  }).join("");
+  const bonusRows = BONUS_MATCHES.map(bm => {
+    const saved = DATA.bonusResults[bm.id];
+    return `
+      <div class="qn-result-row">
+        <div class="qn-result-teams">
+          <span class="qn-badge" style="color:${groupColor(bm.group)};border-color:${hexToRgba(groupColor(bm.group), 0.4)};background:${hexToRgba(groupColor(bm.group), 0.12)};">G${bm.group}</span>
+          <span style="display:inline-flex;align-items:center;gap:6px;">${flagHtml(bm.home.code)} ${bm.home.name}</span>
+          <span style="color:var(--muted);">vs</span>
+          <span style="display:inline-flex;align-items:center;gap:6px;">${flagHtml(bm.away.code)} ${bm.away.name}</span>
+          <span style="font-size:10.5px;color:var(--muted);">· ${bm.day}</span>
+        </div>
+        <input class="qn-score-input mono" id="res-home-${bm.id}" style="width:40px;height:38px;font-size:16px;"
+          inputmode="numeric" maxlength="2" value="${saved ? saved.home : ""}" placeholder="-" />
+        <span style="color:var(--muted);">-</span>
+        <input class="qn-score-input mono" id="res-away-${bm.id}" style="width:40px;height:38px;font-size:16px;"
+          inputmode="numeric" maxlength="2" value="${saved ? saved.away : ""}" placeholder="-" />
+        <button class="qn-save" data-action="save-bonus-result" data-match="${bm.id}">${saved ? "Actualizar" : "Guardar"}</button>
+      </div>
+    `;
+  }).join("");
+  return `
+    <h2 class="qn-section-title">🎯 Resultados oficiales</h2>
+    <div class="qn-panel">
+      <div style="font-size:12px;color:var(--muted);margin-bottom:6px;">
+        Ingresa el marcador final de cada partido para que la tabla de posiciones se calcule sola.
+      </div>
+      ${rows}
+    </div>
+    <h2 class="qn-section-title">⭐ Resultados de partidos bonus</h2>
+    <div class="qn-panel">
+      <div style="font-size:12px;color:var(--muted);margin-bottom:6px;">
+        Estos partidos solo otorgan puntos cuando el participante acierta el marcador exacto (${BONUS_MATCHES[0].points} pts c/u).
+      </div>
+      ${bonusRows}
+    </div>
+  `;
+}
+
+function adminPredictionsHtml() {
+  const userEntries = Object.entries(DATA.users).sort((a, b) => a[1].name.localeCompare(b[1].name));
+
+  const matchSection = (m, isBonus) => {
+    const result = isBonus ? DATA.bonusResults[m.id] : DATA.results[m.id];
+    const gColor = groupColor(m.group);
+    const rows = userEntries.length === 0
+      ? `<div class="qn-empty" style="padding:10px 4px;">Aún no hay participantes registrados.</div>`
+      : userEntries.map(([username, u]) => {
+          const pred = isBonus
+            ? (DATA.bonusPredictions[username] && DATA.bonusPredictions[username][m.id])
+            : (DATA.predictions[username] && DATA.predictions[username][m.id]);
+          let scoreHtml, ptsTag = "";
+          if (pred) {
+            scoreHtml = `${pred.home} - ${pred.away}`;
+            if (result) {
+              const pts = isBonus ? calcBonusPoints(pred, result, m.points) : calcPoints(pred, result, DATA.scoring);
+              ptsTag = `<span class="qn-points-tag">${pts > 0 ? `+${pts} pts` : "+0 pts"}${isBonus && pts > 0 ? " ⭐" : ""}</span>`;
+            }
+          } else {
+            scoreHtml = `<span style="color:var(--muted);font-style:italic;">Sin pronóstico</span>`;
+          }
+          return `
+            <div class="qn-pred-row">
+              ${avatarHtml(u, 26)}
+              <span class="qn-pred-name">${escapeHtml(u.name)}</span>
+              <span class="qn-pred-score mono">${scoreHtml}</span>
+              ${ptsTag}
+            </div>
+          `;
+        }).join("");
+
+    return `
+      <div class="qn-panel">
+        <div class="qn-pred-match-head">
+          <span class="qn-badge" style="color:${gColor};border-color:${hexToRgba(gColor, 0.4)};background:${hexToRgba(gColor, 0.12)};">${isBonus ? "⭐ " : ""}G${m.group}</span>
+          <span style="display:inline-flex;align-items:center;gap:6px;">${flagHtml(m.home.code)} ${m.home.name}</span>
+          <span style="color:var(--muted);">vs</span>
+          <span style="display:inline-flex;align-items:center;gap:6px;">${flagHtml(m.away.code)} ${m.away.name}</span>
+          <span style="font-size:11px;color:var(--muted);margin-left:auto;">${m.day} · ${m.timeLabel}${result ? ` · Resultado: ${result.home}-${result.away}` : ""}</span>
+        </div>
+        <div class="qn-pred-list">${rows}</div>
+      </div>
+    `;
+  };
+
+  return `
+    <h2 class="qn-section-title">📋 Pronósticos de los participantes</h2>
+    <div style="font-size:12px;color:var(--muted);margin-bottom:6px;">
+      Lo que cada participante ha guardado para cada partido. Se actualiza solo cuando guardan o cambian su pronóstico.
+    </div>
+    ${MATCHES.map(m => matchSection(m, false)).join("")}
+    ${BONUS_MATCHES.map(m => matchSection(m, true)).join("")}
+  `;
+}
+
+function adminSettingsHtml() {
+  return `
+    <h2 class="qn-section-title">⚙️ Configuración</h2>
+    <div class="qn-panel">
+      <div class="qn-subhead">Puntuación</div>
+      <div class="qn-settings-row">
+        <label>Acertar ganador o empate</label>
+        <input class="qn-input" type="number" min="0" id="scoring-outcome" value="${DATA.scoring.outcome}" />
+      </div>
+      <div class="qn-settings-row">
+        <label>Acertar goles de un equipo (cada uno)</label>
+        <input class="qn-input" type="number" min="0" id="scoring-pergoal" value="${DATA.scoring.perGoal}" />
+      </div>
+      <div style="font-size:12px;color:var(--muted);margin-bottom:14px;">
+        Marcador exacto = ganador/empate + goles equipo A + goles equipo B = ${DATA.scoring.outcome} + ${DATA.scoring.perGoal} + ${DATA.scoring.perGoal} = <b style="color:var(--gold-soft);">${DATA.scoring.outcome + 2 * DATA.scoring.perGoal} pts</b> (se calcula solo, no se configura aparte).
+      </div>
+      <button class="qn-btn qn-btn-ghost" data-action="save-scoring">Guardar puntuación</button>
+    </div>
+    <div class="qn-panel">
+      <div class="qn-subhead">Contraseña de administrador</div>
+      <form data-action="change-admin-pass-submit">
+        <div id="admin-pass-error"></div>
+        <div class="qn-field">
+          <label>Contraseña actual</label>
+          <input class="qn-input" type="password" id="admin-pass-current" />
+        </div>
+        <div class="qn-field">
+          <label>Nueva contraseña</label>
+          <input class="qn-input" type="password" id="admin-pass-new" />
+        </div>
+        <button class="qn-btn qn-btn-ghost" type="submit">Cambiar contraseña</button>
+      </form>
+    </div>
+  `;
+}
+
+/* ---------------------------------------------------------------
+   TICK (countdown + lock updates without full re-render)
+--------------------------------------------------------------- */
+function tick() {
+  NOW = Date.now();
+  if (!DATA || !SESSION || SESSION.role !== "player") return;
+  if (PLAYER_TAB !== "matches") return;
+  MATCHES.forEach(m => {
+    const statusEl = document.getElementById(`status-${m.id}`);
+    if (!statusEl) return;
+    const locked = isLocked(m, NOW);
+    statusEl.className = `qn-status ${locked ? "locked" : ""}`;
+    statusEl.textContent = locked ? "🔒 Cerrado" : `⏱ Cierra en ${formatRemaining(lockTimeMs(m) - NOW)}`;
+    const homeInput = document.getElementById(`pred-home-${m.id}`);
+    const awayInput = document.getElementById(`pred-away-${m.id}`);
+    const saveBtn = document.getElementById(`save-btn-${m.id}`);
+    if (locked) {
+      if (homeInput) homeInput.disabled = true;
+      if (awayInput) awayInput.disabled = true;
+      if (saveBtn) saveBtn.remove();
+    }
+  });
+  BONUS_MATCHES.forEach(bm => {
+    const statusEl = document.getElementById(`status-${bm.id}`);
+    if (!statusEl) return;
+    const locked = isBonusLocked(bm, NOW);
+    statusEl.className = `qn-status ${locked ? "locked" : ""}`;
+    statusEl.textContent = locked ? "🔒 Cerrado" : `⏱ Cierra en ${formatRemaining(bonusLockTimeMs(bm) - NOW)}`;
+    const homeInput = document.getElementById(`pred-home-${bm.id}`);
+    const awayInput = document.getElementById(`pred-away-${bm.id}`);
+    const saveBtn = document.getElementById(`save-btn-${bm.id}`);
+    if (locked) {
+      if (homeInput) homeInput.disabled = true;
+      if (awayInput) awayInput.disabled = true;
+      if (saveBtn) saveBtn.remove();
+    }
+  });
+}
+
+/* ---------------------------------------------------------------
+   POLL (refresh shared data periodically)
+--------------------------------------------------------------- */
+async function poll() {
+  /* No-op: Firebase onValue listener handles real-time sync automatically */
+}
+
+/* ---------------------------------------------------------------
+   MAIN RENDER DISPATCH
+--------------------------------------------------------------- */
+function render() {
+  if (!DATA) {
+    app.innerHTML = `<div class="qn-login-wrap"><div style="color:var(--muted);font-family:'Oswald',sans-serif;letter-spacing:0.05em;text-transform:uppercase;">Cargando quiniela…</div></div>`;
+    return;
+  }
+  if (!SESSION) { renderLogin(); return; }
+  if (SESSION.role === "admin") { renderAdmin(); return; }
+  renderPlayer();
+}
+
+/* ---------------------------------------------------------------
+   EVENT DELEGATION
+--------------------------------------------------------------- */
+app.addEventListener("click", async (e) => {
+  const t = e.target.closest("button[data-action], a[data-action]");
+  if (!t) return;
+  const action = t.dataset.action;
+
+  if (action === "login-tab") { LOGIN_TAB = t.dataset.tab; render(); }
+  else if (action === "logout") { await doLogout(); }
+  else if (action === "set-tab") {
+    if (SESSION.role === "admin") ADMIN_TAB = t.dataset.tab; else PLAYER_TAB = t.dataset.tab;
+    render();
+  }
+  else if (action === "save-pred") { await savePrediction(t.dataset.match); }
+  else if (action === "save-bonus-pred") { await saveBonusPrediction(t.dataset.match); }
+  else if (action === "dismiss-notice") {
+    NOTICE_DISMISSED = true;
+    const el = document.getElementById("notice-banner");
+    if (el) el.remove();
+  }
+  else if (action === "accept-rules") {
+    RULES_ACCEPTED = true;
+    const el = document.getElementById("rules-modal");
+    if (el) el.remove();
+  }
+  else if (action === "save-result") {
+    const matchId = t.dataset.match;
+    const homeInput = document.getElementById(`res-home-${matchId}`);
+    const awayInput = document.getElementById(`res-away-${matchId}`);
+    const home = homeInput.value.trim(), away = awayInput.value.trim();
+    if (home === "" || away === "") { showToast("Ingresa el marcador final de ambos equipos."); return; }
+    const next = clone(DATA);
+    next.results[matchId] = { home: Number(home), away: Number(away) };
+    await persist(next);
+    showToast("Resultado guardado, tabla actualizada");
+    t.textContent = "Actualizar";
+  }
+  else if (action === "save-bonus-result") {
+    const matchId = t.dataset.match;
+    const homeInput = document.getElementById(`res-home-${matchId}`);
+    const awayInput = document.getElementById(`res-away-${matchId}`);
+    const home = homeInput.value.trim(), away = awayInput.value.trim();
+    if (home === "" || away === "") { showToast("Ingresa el marcador final de ambos equipos."); return; }
+    const next = clone(DATA);
+    next.bonusResults[matchId] = { home: Number(home), away: Number(away) };
+    await persist(next);
+    showToast("Resultado bonus guardado, tabla actualizada");
+    t.textContent = "Actualizar";
+  }
+  else if (action === "regen-pass") {
+    const username = t.dataset.username;
+    const next = clone(DATA);
+    next.users[username].password = generatePassword();
+    await persist(next);
+    showToast("Nueva contraseña generada");
+    render();
+  }
+  else if (action === "remove-user") {
+    const username = t.dataset.username;
+    const next = clone(DATA);
+    delete next.users[username];
+    delete next.predictions[username];
+    await persist(next);
+    showToast("Participante eliminado");
+    render();
+  }
+  else if (action === "copy") {
+    const text = decodeURIComponent(t.dataset.text);
+    try { await navigator.clipboard.writeText(text); showToast("Copiado"); } catch (e2) { showToast("No se pudo copiar"); }
+  }
+  else if (action === "save-scoring") {
+    const outcome = Number(document.getElementById("scoring-outcome").value) || 0;
+    const perGoal = Number(document.getElementById("scoring-pergoal").value) || 0;
+    const next = clone(DATA);
+    next.scoring = { outcome, perGoal };
+    await persist(next);
+    showToast("Puntuación actualizada");
+  }
+  else if (action === "save-favorite-team") {
+    const select = document.getElementById("favorite-team-select");
+    const code = select.value || null;
+    const next = clone(DATA);
+    next.users[SESSION.username].favoriteTeam = code;
+    await persist(next);
+    showToast(code ? `Ahora eres hincha de ${teamName(code)}` : "Equipo favorito removido");
+    render();
+  }
+});
+
+app.addEventListener("input", (e) => {
+  const t = e.target;
+  if (t.classList && t.classList.contains("qn-score-input")) {
+    const clean = t.value.replace(/[^0-9]/g, "").slice(0, 2);
+    if (clean !== t.value) t.value = clean;
+  }
+});
+
+app.addEventListener("submit", async (e) => {
+  const form = e.target.closest("form[data-action]");
+  if (!form) return;
+  e.preventDefault();
+  const action = form.dataset.action;
+
+  if (action === "login-player-submit") {
+    const username = document.getElementById("login-username").value.trim().toLowerCase();
+    const password = document.getElementById("login-password").value.trim();
+    const rec = DATA.users[username];
+    if (rec && rec.password === password) {
+      await doLogin("player", username);
+    } else {
+      document.getElementById("login-error").innerHTML = `<div class="qn-error">Usuario o contraseña incorrectos.</div>`;
+    }
+  }
+  else if (action === "login-admin-submit") {
+    const pass = document.getElementById("login-admin-password").value;
+    if (pass === DATA.adminPassword) {
+      await doLogin("admin", null);
+    } else {
+      document.getElementById("login-error").innerHTML = `<div class="qn-error">Contraseña de administrador incorrecta.</div>`;
+    }
+  }
+  else if (action === "add-user-submit") {
+    const nameInput = document.getElementById("new-user-name");
+    const name = nameInput.value.trim();
+    if (!name) return;
+    const username = generateUsername(name, DATA.users);
+    const password = generatePassword();
+    const next = clone(DATA);
+    next.users[username] = { name, password, createdAt: new Date().toISOString() };
+    await persist(next);
+    showToast(`Participante agregado: ${username}`);
+    render();
+  }
+  else if (action === "change-admin-pass-submit") {
+    const cur = document.getElementById("admin-pass-current").value;
+    const next2 = document.getElementById("admin-pass-new").value;
+    const errEl = document.getElementById("admin-pass-error");
+    if (cur !== DATA.adminPassword) {
+      errEl.innerHTML = `<div class="qn-error">La contraseña actual no es correcta.</div>`;
+      return;
+    }
+    if (!next2.trim()) {
+      errEl.innerHTML = `<div class="qn-error">Escribe una nueva contraseña.</div>`;
+      return;
+    }
+    const next = clone(DATA);
+    next.adminPassword = next2.trim();
+    await persist(next);
+    showToast("Contraseña de administrador actualizada");
+    render();
+  }
+  else if (action === "change-player-pass-submit") {
+    const username = SESSION.username;
+    const cur = document.getElementById("player-pass-current").value;
+    const next2 = document.getElementById("player-pass-new").value;
+    const errEl = document.getElementById("player-pass-error");
+    if (cur !== DATA.users[username].password) {
+      errEl.innerHTML = `<div class="qn-error">La contraseña actual no es correcta.</div>`;
+      return;
+    }
+    if (!next2.trim()) {
+      errEl.innerHTML = `<div class="qn-error">Escribe una nueva contraseña.</div>`;
+      return;
+    }
+    const next = clone(DATA);
+    next.users[username].password = next2.trim();
+    await persist(next);
+    showToast("Contraseña actualizada");
+    render();
+  }
+});
+
+/* ---------------------------------------------------------------
+   BOOTSTRAP
+--------------------------------------------------------------- */
+(async function init() {
+  render(); // show "Cargando…" immediately
+  try {
+    await waitForFirebase();
+  } catch (e) {
+    app.innerHTML = `<div class="qn-login-wrap"><div style="color:#E8553D;font-family:'Oswald',sans-serif;text-transform:uppercase;text-align:center;padding:20px;">
+      ⚠️ No se pudo conectar con Firebase.<br><small style="font-size:12px;opacity:.7;">Verifica la configuración en el archivo HTML.</small>
+    </div></div>`;
+    return;
+  }
+  await loadData();
+  await restoreSession();
+  render();
+  startRealtimeSync();          // live updates from Firebase
+  TICK_TIMER = setInterval(tick, 30000);
+  POLL_TIMER = setInterval(poll, 25000); // kept for compatibility, now a no-op
+})();
+</script>
+</body>
+</html>
